@@ -10,19 +10,7 @@ What's already implemented:
  * Expand abbreviation (by Tab) in HTML (+sub-languages, like RHTML) and
  CSS (+sub-languages, like SCSS)
 
-### Note: it works only if the abbreviation is on a new line.
-
-What will be implemented:
-
- * Custom per-language/global snippets (in resource://snippets.kemmet)
- * HTML beautify for html abbreviations
- * Custom button for expand abbreviation (Tab currently)
- * Preferences page
- * Wrap with abbreviation feature (requested by @babobski)
-
-What won't be implemented:
- * Any other Emmet features
- * Inline expand
+##### Note: it works only if the abbreviation is on a new line.
 
 ## Documentation for professionals
 
