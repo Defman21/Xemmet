@@ -182,18 +182,18 @@
             log.debug(`There's a snippet for ${expandable}, canceling Xemmet handle..`);
             return false;
         }
-        if (this._getSnippet(lang, expandable) !== false) {
-            return true; // this is a custom snippet, don't check it here
-        }
         try {
+            if (this._getSnippet(lang, expandable) !== false) {
+                return true; // this is a custom snippet, don't check it here
+            }
             var abbr = emmet.expandAbbreviation(expandable, lang);
             if (abbr.trim().length === 0) {
-                log.debug("Emmet abbreviation is invalid");
+                log.debug("Emmet abbreviation is empty (invalid)");
                 return false;
             }
             return true;
         } catch (e) {
-            log.debug("Emmet abbreviation was invalid");
+            log.debug("Emmet abbreviation is invalid");
             return false;
         }
     };
