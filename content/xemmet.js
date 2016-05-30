@@ -24,6 +24,7 @@
         window.addEventListener('keydown', this.onKeyDownListener, true);
         log.setLevel(require('ko/logging').LOG_DEBUG);
         loaded = true;
+        require('notify/categories').register('xemmet', {label: "Xemmet"});
         if (typeof(silent) != "undefined" && silent) return;
         log.info("Xemmet loaded");
     };
@@ -161,7 +162,7 @@
     this._isEmmetAbbreviation = (expandable, lang) => {
         if (this.prefs.getBool("xemmet_snippets_are_important", false) === true &&
             ko.abbrev._checkPossibleAbbreviation(expandable)) {
-            log.debug(`There's a snippet for ${expandable}, canceling Xemmet handle..`);
+            log.info(`There's a snippet for ${expandable}, canceling Xemmet handle..`);
             return [false, ""];
         }
         try {
@@ -171,22 +172,18 @@
                 toExpand = `abbreviation: ${expandable}`;
                 abbr = emmet.expandAbbreviation(snippet[1], lang);
             } else {
-                toExpand = `snippet "${expandable}": ${snippet[1]}`;
-                abbr = emmet.expandAbbreviation(snippet[1], lang);
+                log.debug(`Expandable is a snippet, ignore..`);
+                require('notify/notify').send('Xemmet snippet inserted', {priority: "info", category: "xemmet"});
+                return [true, snippet[1]];
             }
             if (abbr.trim().length === 0) {
-                log.debug(`Emmet abbreviation is empty (invalid), got ${toExpand}`);
+                log.error(`Emmet abbreviation is empty (invalid), got ${toExpand}`);
                 return [false, ""];
             }
             return [true, abbr];
         } catch (e) {
-            if (snippet === false) {
-                log.debug(`Emmet abbreviation is invalid, tried to expand ${toExpand}`);
-                return [false, ""];
-            } else {
-                log.debug(`Emmet failed to expand snippet, Xemmet hopes it's valid: ${toExpand}`);
-                return [true, snippet[1]];
-            }
+            log.error(`Invalid abbreviation: ${toExpand}`);
+            return [false, ""];
         }
     };
     
