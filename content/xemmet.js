@@ -198,6 +198,11 @@
         }
     };
     
+    this._finalize = () => {
+        log.info("Current string is not a valid Emmet abbreviation, pass it to Komodo handlers");
+        return true;
+    };
+    
     this.onKeyDownListener = (e) => {
         var editor = require('ko/editor');
         var views = require('ko/views');
@@ -230,7 +235,7 @@
                         } else {
                             log.error(`Something gone wrong while expanding your abbreviation: ${e}`);
                         }
-                        return true;
+                        return this._finalize();
                     }
                 } else {
                     expand = toInsert; // one-nested snippets 
@@ -251,8 +256,7 @@
                 ko.abbrev.insertAbbrevSnippet(tempSnippet,
                                               require('ko/views').current().get());
             } else {
-                log.debug("Not an abbreviation");
-                return true;
+                return this._finalize();
             }
         }
     };
