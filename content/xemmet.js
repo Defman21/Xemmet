@@ -3,7 +3,7 @@
     const snips = require('./extra/snippets');
     const log = require('ko/logging').getLogger('xemmet');    
     const sublangs = {
-        html: ["html", "rhtml", "html4", "erb", "html.erb", "erb.html"],
+        html: ["html", "html5", "rhtml", "erb", "html.erb", "erb.html"],
         css: ["css", "scss", "less"]
     };
     
@@ -78,39 +78,15 @@
     }).apply(this.debug, [this]);
     
     (function() {
-        this.setPref = (name, value) => {
-            try {
-                if (typeof(value) == "boolean") {
-                    require('ko/prefs').setBoolean(name, value);
-                } else if (typeof(value) == "string") {
-                    require('ko/prefs').setString(name, value);
-                } else if (typeof(value) == "number") {
-                    require('ko/prefs').setLong(name, value);
-                } else {
-                    return false;
-                }
-            } catch (e) {
-                log.error(`Unable to set pref#<${name}>, an error occurred: ${e}`);
-                return false;
-            }
-        };
+        var p = require('ko/prefs');
         
-        this.getPref = (name, value) => {
-            try {
-                if (typeof(value) == "boolean") {
-                    return require('ko/prefs').getBoolean(name, value);
-                } else if (typeof(value) == "string") {
-                    return require('ko/prefs').getString(name, value);
-                } else if (typeof(value) == "number") {
-                    return require('ko/prefs').getLong(name, value);
-                } else {
-                    return false;
-                }
-            } catch (e) {
-                log.error(`Unable to get pref#<${name}>, an error occurred: ${e}`);
-                return false;
-            }
-        };
+        this.setBool = (name, value) => p.setBoolean(name, value);
+        this.setString = (name, value) => p.setString(name, value);
+        this.setLong = (name, value) => p.setLong(name, value);
+        
+        this.getBool = (name, value) => p.getBoolean(name, value);
+        this.getString = (name, value) => p.getString(name, value);
+        this.getLong = (name, value) => p.getLong(name, value);
     }).apply(this.prefs);
     
     this._createSnippet = (text, noIndent) => {
@@ -125,33 +101,20 @@
             getStringAttribute: function(name) { return ('' + this[name]); }
         };
     };
-
+    
     this._replaceWithTabstops = (text, search, block) => {
         var prepared = text.replace(search, block);
         return prepared;
     };
     
-    this._prepareTabstops = (text) => {
+    this._prepareTabstops = (snippet, lang) => {
         var i = 0;
-        return this._replaceWithTabstops(text, /\{\s*\}/gmi, ()=>{i++; return `{[[%tabstop${i}:]]}`;});
-    };
-    
-    this._getRootLanguage = (language) => {
-        if (sublangs.html.indexOf(language) > -1) return "html";
-        if (sublangs.css.indexOf(language) > -1) return "css";        
-    };
-    
-    this._getSnippet = (language, text) => {
-        return snips.getSnippet(language, text);
-    };
-    
-    this._prepareSnippet = (lang, snippet) => {
         var nowrap = false;
         if (lang == "css") nowrap = true;
         log.debug(`Language: ${lang}, Snippet: ${snippet}`);
         var prepared = this._replaceWithTabstops(snippet,
                                                  /\|/gmi,
-                                                 ()=>{
+                                                 () => {
                                                     return "[[%tabstop:]]";
                                                  });
         prepared = this._replaceWithTabstops(prepared,
@@ -164,37 +127,66 @@
                                                 if (typeof(g3) == "undefined") g3 = "";
                                                 return `[[%tabstop${g2}:${g3}]]`;
                                              });
+        prepared = this._replaceWithTabstops(prepared,
+                                             /\{\s*\}/gmi,
+                                             () => {
+                                                i++;
+                                                return `{[[%tabstop${i}:]]}`;
+                                             });
         log.debug(`To insert: ${prepared}`);
         return prepared;
     };
     
-    this._expandAbbreviation = (string) => {
+    this._getRootLanguage = (language) => {
+        if (sublangs.html.indexOf(language) > -1) return "html";
+        if (sublangs.css.indexOf(language) > -1) return "css";        
+    };
+    
+    this._getSnippet = (language, text) => {
+        var _return = snips.getSnippet(language, text);
+        if (!_return) {
+            return [false, text];
+        }
+        return [true, _return];
+    };
+    
+    this._expandAbbreviation = (string, lang) => {
         try {
-            return emmet.expandAbbreviation(string);
+            return emmet.expandAbbreviation(string, lang);
         } catch (e) {
             return string;
         }
     };
     
     this._isEmmetAbbreviation = (expandable, lang) => {
-        if (this.prefs.getPref("xemmet_snippets_are_important", false) === true &&
+        if (this.prefs.getBool("xemmet_snippets_are_important", false) === true &&
             ko.abbrev._checkPossibleAbbreviation(expandable)) {
             log.debug(`There's a snippet for ${expandable}, canceling Xemmet handle..`);
-            return false;
+            return [false, ""];
         }
         try {
-            if (this._getSnippet(lang, expandable) !== false) {
-                return true; // this is a custom snippet, don't check it here
+            var abbr, toExpand;
+            var snippet = this._getSnippet(lang, expandable);
+            if (snippet[0] === false) {
+                toExpand = `abbreviation: ${expandable}`;
+                abbr = emmet.expandAbbreviation(snippet[1], lang);
+            } else {
+                toExpand = `snippet "${expandable}": ${snippet[1]}`;
+                abbr = emmet.expandAbbreviation(snippet[1], lang);
             }
-            var abbr = emmet.expandAbbreviation(expandable, lang);
             if (abbr.trim().length === 0) {
-                log.debug("Emmet abbreviation is empty (invalid)");
-                return false;
+                log.debug(`Emmet abbreviation is empty (invalid), got ${toExpand}`);
+                return [false, ""];
             }
-            return true;
+            return [true, abbr];
         } catch (e) {
-            log.debug("Emmet abbreviation is invalid");
-            return false;
+            if (snippet === false) {
+                log.debug(`Emmet abbreviation is invalid, tried to expand ${toExpand}`);
+                return [false, ""];
+            } else {
+                log.debug(`Emmet failed to expand snippet, Xemmet hopes it's valid: ${toExpand}`);
+                return [true, snippet[1]];
+            }
         }
     };
     
@@ -213,34 +205,11 @@
             var toExpand = editor.getLine().replace(/\t|\s{2,}/gm, "");
             
             log.debug(`Abbreviation before caret: ${toExpand}`);
-            
-            if (this._isEmmetAbbreviation(toExpand, lang)) {
-                var toInsert = null;
-                var snippet = this._getSnippet(lang, toExpand);
-                if (snippet === false) {
-                    log.debug('Abbreviation is not a snippet, prepare {} tabstops');
-                    toInsert = this._prepareTabstops(toExpand);
-                } else {
-                    log.debug('Abbreviation is a snippet, prepare | and ${} tabstops');
-                    toInsert = this._prepareSnippet(lang, snippet);
-                }
-                var expand;
-                if (!e.ctrlKey) {
-                    try {
-                        expand = this._expandAbbreviation(toInsert);
-                        e.preventDefault();
-                    } catch (e) {
-                        if (snippet !== false) {
-                            log.error(`Snippet ${snippet} is invalid`);
-                        } else {
-                            log.error(`Something gone wrong while expanding your abbreviation: ${e}`);
-                        }
-                        return this._finalize();
-                    }
-                } else {
-                    expand = toInsert; // one-nested snippets 
-                }
-                
+            var abbreviation = this._isEmmetAbbreviation(toExpand, lang);
+            if (abbreviation[0]) {
+                e.preventDefault();
+                var toInsert = this._prepareTabstops(abbreviation[1], lang);
+                var expand = this._expandAbbreviation(toInsert, lang);
                 var posStart = editor.getCursorPosition();
                 posStart.ch -= toExpand.length;
                 var posEnd = editor.getCursorPosition();
