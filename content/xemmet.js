@@ -10,6 +10,7 @@
     var loaded = false;
     
     this.debug = {};
+    this.prefs = {};
     
     this.getProperty = (property) => this[property];
     
@@ -76,6 +77,42 @@
         };
     }).apply(this.debug, [this]);
     
+    (function() {
+        this.setPref = (name, value) => {
+            try {
+                if (typeof(value) == "boolean") {
+                    require('ko/prefs').setBoolean(name, value);
+                } else if (typeof(value) == "string") {
+                    require('ko/prefs').setString(name, value);
+                } else if (typeof(value) == "number") {
+                    require('ko/prefs').setLong(name, value);
+                } else {
+                    return false;
+                }
+            } catch (e) {
+                log.error(`Unable to set pref#<${name}>, an error occurred: ${e}`);
+                return false;
+            }
+        };
+        
+        this.getPref = (name, value) => {
+            try {
+                if (typeof(value) == "boolean") {
+                    return require('ko/prefs').getBoolean(name, value);
+                } else if (typeof(value) == "string") {
+                    return require('ko/prefs').getString(name, value);
+                } else if (typeof(value) == "number") {
+                    return require('ko/prefs').getLong(name, value);
+                } else {
+                    return false;
+                }
+            } catch (e) {
+                log.error(`Unable to get pref#<${name}>, an error occurred: ${e}`);
+                return false;
+            }
+        };
+    }).apply(this.prefs);
+    
     this._createSnippet = (text, noIndent) => {
         return {
             type: 'snippet',
@@ -140,6 +177,11 @@
     };
     
     this._isEmmetAbbreviation = (expandable, lang) => {
+        if (this.prefs.getPref("xemmet_snippets_are_important", false) === true &&
+            ko.abbrev._checkPossibleAbbreviation(expandable)) {
+            log.debug(`There's a snippet for ${expandable}, quiting Xemmet handle..`);
+            return false;
+        }
         try {
             var abbr = emmet.expandAbbreviation(expandable, lang);
             if (abbr.trim().length === 0) {
