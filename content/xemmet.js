@@ -179,18 +179,21 @@
     this._isEmmetAbbreviation = (expandable, lang) => {
         if (this.prefs.getPref("xemmet_snippets_are_important", false) === true &&
             ko.abbrev._checkPossibleAbbreviation(expandable)) {
-            log.debug(`There's a snippet for ${expandable}, quiting Xemmet handle..`);
+            log.debug(`There's a snippet for ${expandable}, canceling Xemmet handle..`);
             return false;
+        }
+        if (this._getSnippet(lang, expandable) !== false) {
+            return true; // this is a custom snippet, don't check it here
         }
         try {
             var abbr = emmet.expandAbbreviation(expandable, lang);
             if (abbr.trim().length === 0) {
-                log.debug("Emmet abbreviation was invalid: returned ''");
+                log.debug("Emmet abbreviation is invalid");
                 return false;
             }
             return true;
         } catch (e) {
-            log.debug("Emmet abbreviation was invalid: returned ''");
+            log.debug("Emmet abbreviation was invalid");
             return false;
         }
     };
@@ -208,19 +211,27 @@
             
             if (this._isEmmetAbbreviation(toExpand, lang)) {
                 var toInsert = null;
-                var builtSnippet = this._getSnippet(lang, toExpand);
-                if (builtSnippet === false) {
+                var snippet = this._getSnippet(lang, toExpand);
+                if (snippet === false) {
                     log.debug('Abbreviation is not a snippet, prepare {} tabstops');
                     toInsert = this._prepareTabstops(toExpand);
                 } else {
-                    log.debug('Abbreviation is a snippet, prepare | and ${i:s} tabstops');
-                    toInsert = this._prepareSnippet(lang, builtSnippet);
+                    log.debug('Abbreviation is a snippet, prepare | and ${} tabstops');
+                    toInsert = this._prepareSnippet(lang, snippet);
                 }
-                e.preventDefault();
-                
                 var expand;
                 if (!e.ctrlKey) {
-                    expand = this._expandAbbreviation(toInsert);
+                    try {
+                        expand = this._expandAbbreviation(toInsert);
+                        e.preventDefault();
+                    } catch (e) {
+                        if (snippet !== false) {
+                            log.error(`Snippet ${snippet} is invalid`);
+                        } else {
+                            log.error(`Something gone wrong while expanding your abbreviation: ${e}`);
+                        }
+                        return true;
+                    }
                 } else {
                     expand = toInsert; // one-nested snippets 
                 }
@@ -235,9 +246,9 @@
                 );
                 
                 editor.replaceSelection(""); // remove abbreviation
-                var snippet = this._createSnippet(expand, false);
+                var tempSnippet = this._createSnippet(expand, false);
                 
-                ko.abbrev.insertAbbrevSnippet(snippet,
+                ko.abbrev.insertAbbrevSnippet(tempSnippet,
                                               require('ko/views').current().get());
             } else {
                 log.debug("Not an abbreviation");

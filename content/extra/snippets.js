@@ -587,6 +587,7 @@
             "filters": "html",
             "profile": "html",
             "snippets": {
+                "~": "@",
                 "c": "<!-- ${child} -->",
                 "cc:ie6": "<!--[if lte IE 6]>\n\t${child}\n<![endif]-->",
                 "cc:ie": "<!--[if IE]>\n\t${child}\n<![endif]-->",
