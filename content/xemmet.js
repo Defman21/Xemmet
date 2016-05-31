@@ -62,7 +62,7 @@
     
     this.enable = () => {
         if (loaded) return false;
-        this.load(true, true);
+        this.load(true);
         log.info("Xemmet enabled");
         loaded = false;
         return true;
