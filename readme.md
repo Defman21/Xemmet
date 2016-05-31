@@ -25,8 +25,7 @@ You can add them via Console tab in bottom pane:
 
 They will be automatically saved.
 
-If you want to update a snippet, just call `.add` again with the same name of
-the snippet you want to update. It will be replaced with the one you pass to
+If you want to update a snippet, just call `.add` again with the name of snippet you want to update. It will be replaced with the one you pass to
 the function.
 
 They are placed at `%komodo_user_dir%/snippets.xmt.json`.
