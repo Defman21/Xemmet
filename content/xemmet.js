@@ -154,7 +154,6 @@
     
     this._getSnippet = (language, text) => {
         var _return = snips.getSnippet(language, text);
-        console.log(_return);
         if (!_return.snippet) {
             return {isSnippet: false, text: text};
         }
