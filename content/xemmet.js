@@ -4,7 +4,7 @@
     const snips = require('./extra/snippets');
     const log = require('ko/logging').getLogger('xemmet');    
     const sublangs = {
-        html: ["html", "html5", "rhtml", "erb", "html.erb", "erb.html"],
+        html: ["html", "html5", "rhtml", "erb", "html.erb", "html.md"],
         css: ["css", "scss", "less"]
     };
     
@@ -154,10 +154,11 @@
     
     this._getSnippet = (language, text) => {
         var _return = snips.getSnippet(language, text);
-        if (!_return) {
-            return [false, text];
+        console.log(_return);
+        if (!_return.snippet) {
+            return {isSnippet: false, text: text};
         }
-        return [true, _return];
+        return {isSnippet: true, snippet: _return};
     };
     
     this._expandAbbreviation = (string, lang, no_beautify) => {
@@ -187,22 +188,22 @@
         }
         try {
             var expand, toExpand;
-            var snippet = this._getSnippet(lang, expandable);
-            if (snippet[0] === false) {
+            var object = this._getSnippet(lang, expandable);
+            if (object.isSnippet === false) {
                 toExpand = `abbreviation: ${expandable}`;
-                expand = emmet.expandAbbreviation(snippet[1], lang);
+                expand = emmet.expandAbbreviation(object.text, lang);
             } else {
                 log.debug(`IsEmmetAbbreviation: expandable is a snippet, ignore..`);
-                require('notify/notify').send('Xemmet snippet inserted', {priority: "info", category: "xemmet"});
-                return [true, snippet[1]];
+                require('notify/notify').send(`Xemmet ${object.snippet.type} snippet "${object.snippet.name}" inserted`, {priority: "info", category: "xemmet"});
+                return [true, object.snippet.text];
             }
             if (expand.trim().length === 0) {
                 log.error(`IsEmmetAbbreviation: Emmet abbreviation is empty (invalid), got ${toExpand}`);
                 return [false, ""];
             }
-            log.debug(`IsEmmetAbbreviation: expand = ${expand}; snippet = ${snippet}`);
+            log.debug(`IsEmmetAbbreviation: expand = ${expand}; object = ${object}`);
             if (lang == "html") {
-                return [true, snippet[1]];
+                return [true, object.text];
             } else {
                 return [true, expand];
             }
