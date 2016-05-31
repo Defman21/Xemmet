@@ -26,6 +26,7 @@
         log.setLevel(require('ko/logging').LOG_DEBUG);
         loaded = true;
         require('notify/categories').register('xemmet', {label: "Xemmet"});
+        snips.load();
         if (typeof(silent) != "undefined" && silent) return;
         log.info("Xemmet loaded");
     };
@@ -33,6 +34,7 @@
     this.unload = (silent) => {
         window.removeEventListener('keydown', this.onKeyDownListener, true);
         loaded = false;
+        snips.unload();
         if (typeof(silent) != "undefined" && silent) return;
         log.info("Xemmet unloaded");
     };

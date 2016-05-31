@@ -734,8 +734,47 @@
             },
         }
     };
-
+    
+    const io = require('ko/file');
+    const sys = require('sdk/system');
+    const log = require('ko/logging').getLogger('xemmet');
+    
+    var userSnippets = {};
+    
+    this.load = () => {
+        try {
+            var profPath = io.join(sys.pathFor("ProfD"), '..');
+            var snipPath = io.join(profPath, 'snippets.xmt.json');
+            log.debug("Reading " + snipPath);
+            var file = io.read(snipPath, "r");
+            userSnippets = JSON.parse(file);
+            log.info("User snippets loaded");
+            log.debug(userSnippets);
+            return true;
+        } catch (e) {
+            log.info("Unable to load user snippets");
+            log.debug(e);
+            return true;
+        }
+    };
+    
+    this.unload = () => {
+        
+    };
+    
+    this.getUserSnippet = (language, snippet) => {
+        if (language in userSnippets) {
+            if (snippet in userSnippets[language].snippets) {
+                return userSnippets[language].snippets[snippet];
+            }
+            return false;
+        }
+        return false;
+    };
+    
     this.getSnippet = (language, snippet) => {
+        var usnippet = this.getUserSnippet(language, snippet);
+        if (usnippet !== false) return usnippet;
         if (language in snippets) {
             if (snippet in snippets[language].snippets) {
                 return snippets[language].snippets[snippet];
