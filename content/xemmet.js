@@ -247,7 +247,10 @@
                     category: "xemmet"
                 });
             }
-            editor.replaceSelection(expand);
+            var snippet = this._createSnippet(expand, false);
+            editor.replaceSelection("");
+            ko.abbrev.insertAbbrevSnippet(snippet,
+                                          require('ko/views').current().get());
         } else {
             require('notify/notify').send(`Abbreviation "${prompt}" is invalid`, {
                 priority: "error",
