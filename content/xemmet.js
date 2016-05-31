@@ -1,4 +1,5 @@
 (function () {
+    const prefs = require('./extra/prefs');
     const emmet = require('./sdk/emmet');
     const beautify = require('./sdk/beautify/beautify');
     const snips = require('./extra/snippets');
@@ -20,11 +21,23 @@
     this.getSnippets = () => snips;
     this.getSubLanguages = () => sublangs;
     
+    this._loadInjector = () => {
+        prefs.injectInterpreterPref({
+            basename: "editsmart",
+            siblingSelector: "#collaboration_groupbox",
+            prefname: "xemmet_snippets_are_important",
+            caption: "Xemmet"
+        });
+        log.debug("Xemmet: injected a preference");
+    };
     
     this.load = (silent) => {
         window.addEventListener('keydown', this.onKeyDownListener, true);
         log.setLevel(require('ko/logging').LOG_DEBUG);
-        loaded = true;
+        if (!loaded) {
+            loaded = true;
+            this._loadInjector();
+        }
         require('notify/categories').register('xemmet', {label: "Xemmet"});
         snips.load();
         if (typeof(silent) != "undefined" && silent) return;
