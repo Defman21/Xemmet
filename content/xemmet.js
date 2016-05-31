@@ -220,7 +220,7 @@
     this._proceedWrapSelection = (editor, lang) => {
         if (lang != "html") {
             require('notify/notify').send("Xemmet does not support Wrap Abbreviation feature for " + lang, {
-                priority: "warn",
+                priority: "info",
                 category: "xemmet"
             });
             return;
