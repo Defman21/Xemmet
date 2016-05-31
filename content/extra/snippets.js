@@ -800,6 +800,8 @@
     
     this.get = (l, s) => this.getSnippet(l, s);
     
+    this.getUserSnippets = () => userSnippets;
+    
     this.getSnippet = (language, snippet) => {
         var usnippet = this._getUserSnippet(language, snippet);
         if (usnippet.snippet !== false) return usnippet;

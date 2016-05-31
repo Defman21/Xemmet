@@ -1,5 +1,5 @@
 (function () {
-    const prefs = require('./extra/prefs');
+    const _prefs = require('./extra/prefs');
     const emmet = require('./sdk/emmet');
     const beautify = require('./sdk/beautify/beautify');
     const snips = require('./extra/snippets');
@@ -22,7 +22,7 @@
     this.getSubLanguages = () => sublangs;
     
     this.loadInjector = () => {
-        prefs.injectPref({
+        _prefs.injectPref({
             basename: "pref-editsmart",
             siblingSelector: "#collaboration_groupbox",
             prefname: "xemmet_snippets_are_important",
@@ -279,6 +279,10 @@
         var lang = this._getRootLanguage(views.current().get('language').toLowerCase());
         if (e.keyCode === 9) { // tab key
             if (e.ctrlKey) {
+                if (this.prefs.getBool("xemmet_strict_mode") && ["html", "css"].indexOf(lang) == -1) {
+                    log.info("Strict mode enabled, Xemmet is ignoring current language");
+                    return true;
+                }
                 log.debug("Listener: processing Ctrl+tab press...");
                 if (editor.getSelection().trim().length > 0) {
                     e.preventDefault();
