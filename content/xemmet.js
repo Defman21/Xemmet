@@ -111,17 +111,23 @@
         return prepared;
     };
     
-    this._prepareTabstops = (snippet, lang) => {
+    this._prepareTabstops = (snippet, lang, custom) => {
         var i = 0;
+        var cr = false;
+        if (typeof(custom) != "undefined") {
+            cr = true;
+        }
         log.debug(`PrepareTabstops: snippet = ${snippet}; lang = ${lang}`);
         var prepared = this._replaceWithTabstops(snippet,
                                                  /\|/gmi,
                                                  () => {
+                                                    if (cr) return custom;
                                                     return "[[%tabstop:]]";
                                                  });
         prepared = this._replaceWithTabstops(prepared,
                                              /(\$\{(\d+|\w+)(?:\:(.+?))?\})/gmi,
                                              (_, g1, g2, g3) => {
+                                                if (cr) return custom;
                                                 if (isNaN(g2)) {
                                                     g3 = g2;
                                                     g2 = "";
@@ -132,6 +138,7 @@
         prepared = this._replaceWithTabstops(prepared,
                                              /\{\s*\}/gmi,
                                              () => {
+                                                if (cr) return custom;
                                                 i++;
                                                 return `{[[%tabstop${i}:]]}`;
                                              });
@@ -141,7 +148,8 @@
     
     this._getRootLanguage = (language) => {
         if (sublangs.html.indexOf(language) > -1) return "html";
-        if (sublangs.css.indexOf(language) > -1) return "css";        
+        if (sublangs.css.indexOf(language) > -1) return "css";
+        return language;
     };
     
     this._getSnippet = (language, text) => {
@@ -152,10 +160,13 @@
         return [true, _return];
     };
     
-    this._expandAbbreviation = (string, lang) => {
+    this._expandAbbreviation = (string, lang, no_beautify) => {
         var expand;
         try {
             expand = emmet.expandAbbreviation(string, lang);
+            if (typeof(no_beautify) != "undefined" && no_beautify) {
+                return expand;    
+            }
             if (lang == "html") {
                 expand = beautify.html(expand, {
                     indent_size: 1,
@@ -206,37 +217,88 @@
         return true;
     };
     
+    this._proceedWrapSelection = (editor, lang) => {
+        if (lang != "html") {
+            require('notify/notify').send("Xemmet does not support Wrap Abbreviation feature for " + lang, {
+                priority: "warn",
+                category: "xemmet"
+            });
+            return;
+        }
+        var prompt = require('ko/dialogs').prompt("Enter Emmet abbreviation: ");
+        if (prompt.indexOf("{}") == -1) {
+            prompt += "{}"; // add placeholder for HTML, most CSS abbreviations already has a placeholder
+        }
+        var abbreviation = this._isEmmetAbbreviation(prompt, lang);
+        if (abbreviation[0]) {
+            var insert = this._prepareTabstops(abbreviation[1], lang, "{[[replace]]}");
+            var expand = this._expandAbbreviation(insert, lang, true);
+            log.debug("ProceedWrapSelection: to insert: " + expand);
+            var selection = editor.getSelection();
+            expand = expand.replace("[[replace]]", selection);
+            try {
+                expand = beautify.html(expand, {
+                    indent_size: 1,
+                    indent_char: "\t"
+                });
+            } catch (e) {
+                require('notify/notify').send("Unable to beautify the result!", {
+                    priority: "warn",
+                    category: "xemmet"
+                });
+            }
+            editor.replaceSelection(expand);
+        } else {
+            require('notify/notify').send(`Abbreviation "${prompt}" is invalid`, {
+                priority: "error",
+                category: "xemmet"
+            });
+            return;
+        }
+    };
+    
     this.onKeyDownListener = (e) => {
         var editor = require('ko/editor');
         var views = require('ko/views');
         var lang = this._getRootLanguage(views.current().get('language').toLowerCase());
         if (e.keyCode === 9) { // tab key
-            log.debug('Listener: Processing tab press...');
-            
-            var toExpand = editor.getLine().replace(/\t|\s{2,}/gm, "");
-            
-            log.debug(`Listener: Abbreviation before caret: ${toExpand}`);
-            var abbreviation = this._isEmmetAbbreviation(toExpand, lang);
-            if (abbreviation[0]) {
-                e.preventDefault();
-                var toInsert = this._prepareTabstops(abbreviation[1], lang);
-                var expand = this._expandAbbreviation(toInsert, lang);
-                var posStart = editor.getCursorPosition();
-                posStart.ch -= toExpand.length;
-                var posEnd = editor.getCursorPosition();
-                
-                editor.setSelection(
-                    posStart,
-                    posEnd
-                );
-                
-                editor.replaceSelection(""); // remove abbreviation
-                var tempSnippet = this._createSnippet(expand, false);
-                
-                ko.abbrev.insertAbbrevSnippet(tempSnippet,
-                                              require('ko/views').current().get());
+            if (e.ctrlKey) {
+                log.debug("Listener: processing Ctrl+tab press...");
+                if (editor.getSelection().trim().length > 0) {
+                    e.preventDefault();
+                    this._proceedWrapSelection(editor, lang);
+                } else {
+                    log.debug("Listener: no selection found");
+                    return true;
+                }
             } else {
-                return this._finalize();
+                log.debug('Listener: Processing tab press...');
+                
+                var toExpand = editor.getLine().replace(/\t|\s{2,}/gm, "");
+                
+                log.debug(`Listener: Abbreviation before caret: ${toExpand}`);
+                var abbreviation = this._isEmmetAbbreviation(toExpand, lang);
+                if (abbreviation[0]) {
+                    e.preventDefault();
+                    var toInsert = this._prepareTabstops(abbreviation[1], lang);
+                    var expand = this._expandAbbreviation(toInsert, lang);
+                    var posStart = editor.getCursorPosition();
+                    posStart.ch -= toExpand.length;
+                    var posEnd = editor.getCursorPosition();
+                    
+                    editor.setSelection(
+                        posStart,
+                        posEnd
+                    );
+                    
+                    editor.replaceSelection(""); // remove abbreviation
+                    var tempSnippet = this._createSnippet(expand, false);
+                    
+                    ko.abbrev.insertAbbrevSnippet(tempSnippet,
+                                                  require('ko/views').current().get());
+                } else {
+                    return this._finalize();
+                }
             }
         }
     };
