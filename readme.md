@@ -14,28 +14,41 @@ Features:
 
 ##### Note: Expand abbreviation works only if the abbreviation is on a new line.
 
+##### Note 2: in CSS, there will be auto-completions by Komodo. You need to press Esc to get rid of them and then press Tab to expand your abbreviation.
+
 
 ## Custom snippets
 
-They should be placed at `%komodo_user_dir%/snippets.xmt.json`.
-For reference, look at `content/extra/snippets.js`
+You can add them via Console tab in bottom pane:
+
+`require('xemmet/extra/snippets').add(language, name, value);`
+
+They will be automatically saved.
+
+If you want to update a snippet, just call `.add` again with the same name of
+the snippet you want to update. It will be replaced with the one you pass to
+the function.
+
+They are placed at `%komodo_user_dir%/snippets.xmt.json`.
 
 Format of the file:
 
 ```json
 {
     "css": {
-        "snippets": {
-            "%snippet_name%": "%snippet_content%" (could be CSS or Emmet snippet)
-        }
+        "%snippet_name%": "%snippet_content%"
     },
     "html": {
-        "snippets": {
-            "%snippet_name%": "%snippet_content%" (could be HTML or Emmet snippet)
-        }
+        "%snippet_name%": "%snippet_content%"
     }
 }
 ```
+
+`%snippet_content%` could be:
+
+* Emmet abbreviation
+* Raw HTML
+* Raw CSS
 
 ## Wrap selection
 
