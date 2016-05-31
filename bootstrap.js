@@ -25,6 +25,7 @@ var windowListener = {
         domWindow.addEventListener("komodo-ui-started", function onLoad() {
             domWindow.removeEventListener("komodo-ui-started", onLoad, false);
             loadIntoWindow(domWindow);
+            loadInjector(domWindow);
         }, false);
     },
 

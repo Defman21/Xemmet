@@ -21,9 +21,9 @@
     this.getSnippets = () => snips;
     this.getSubLanguages = () => sublangs;
     
-    this._loadInjector = () => {
-        prefs.injectInterpreterPref({
-            basename: "editsmart",
+    this.loadInjector = () => {
+        prefs.injectPref({
+            basename: "pref-editsmart",
             siblingSelector: "#collaboration_groupbox",
             prefname: "xemmet_snippets_are_important",
             caption: "Xemmet"
@@ -36,8 +36,8 @@
         log.setLevel(require('ko/logging').LOG_DEBUG);
         if (!loaded) {
             loaded = true;
-            this._loadInjector();
         }
+        this.loadInjector();
         require('notify/categories').register('xemmet', {label: "Xemmet"});
         snips.load();
         if (typeof(silent) != "undefined" && silent) return;
@@ -62,7 +62,7 @@
     
     this.enable = () => {
         if (loaded) return false;
-        this.load(true);
+        this.load(true, true);
         log.info("Xemmet enabled");
         loaded = false;
         return true;

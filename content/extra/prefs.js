@@ -3,10 +3,10 @@
     const log = require("ko/logging").getLogger("xemmet")
     const {Cc, Ci} = require("chrome");
     
-    var injectObserver = false;
+    var injectObserver, prefWindowObserve = false;
     var injections = [];
     
-    this.injectInterpreterPref = function(o)
+    this.injectPref = function(o)
     {
         log.debug("Injecting a preference...", o);
         try
@@ -26,6 +26,7 @@
         // Register our observer
         if ( ! injectObserver)
         {
+            console.log(injectObserver);
             injectObserver = true;
             
             var observerSvc = Cc["@mozilla.org/observer-service;1"].getService(Ci.nsIObserverService);
@@ -36,9 +37,9 @@
     var prefWindowObserver = {
         observe: function(subject, topic, data)
         {
+            if (prefWindowObserve) return;
             for (let o of injections)
             {
-                log.debug("Creating an injection...");
                 let basename =  o.basename,
                     siblingSelector =  o.siblingSelector,
                     prefname = o.prefname,
@@ -98,6 +99,8 @@
                     )
                 );
                 sibling.after(options.toString());
+                log.debug("Creating an injection..." + JSON.stringify(o));
+                prefWindowObserve = true;
             }
         }
     };
