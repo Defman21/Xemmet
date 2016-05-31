@@ -1,5 +1,6 @@
 (function () {
     const emmet = require('./sdk/emmet');
+    const beautify = require('./sdk/beautify/beautify');
     const snips = require('./extra/snippets');
     const log = require('ko/logging').getLogger('xemmet');    
     const sublangs = {
@@ -110,9 +111,7 @@
     
     this._prepareTabstops = (snippet, lang) => {
         var i = 0;
-        var nowrap = false;
-        if (lang == "css") nowrap = true;
-        log.debug(`Language: ${lang}, Snippet: ${snippet}`);
+        log.debug(`PrepareTabstops: snippet = ${snippet}; lang = ${lang}`);
         var prepared = this._replaceWithTabstops(snippet,
                                                  /\|/gmi,
                                                  () => {
@@ -134,7 +133,7 @@
                                                 i++;
                                                 return `{[[%tabstop${i}:]]}`;
                                              });
-        log.debug(`To insert: ${prepared}`);
+        log.debug(`PrepareTabstops: return = ${prepared}`);
         return prepared;
     };
     
@@ -152,8 +151,16 @@
     };
     
     this._expandAbbreviation = (string, lang) => {
+        var expand;
         try {
-            return emmet.expandAbbreviation(string, lang);
+            expand = emmet.expandAbbreviation(string, lang);
+            if (lang == "html") {
+                expand = beautify.html(expand, {
+                    indent_size: 1,
+                    indent_char: "\t"
+                });
+            }
+            return expand;
         } catch (e) {
             return string;
         }
@@ -162,27 +169,32 @@
     this._isEmmetAbbreviation = (expandable, lang) => {
         if (this.prefs.getBool("xemmet_snippets_are_important", false) === true &&
             ko.abbrev._checkPossibleAbbreviation(expandable)) {
-            log.info(`There's a snippet for ${expandable}, canceling Xemmet handle..`);
+            log.info(`IsEmmetAbbreviation: there's a snippet for ${expandable}, canceling Xemmet handle..`);
             return [false, ""];
         }
         try {
-            var abbr, toExpand;
+            var expand, toExpand;
             var snippet = this._getSnippet(lang, expandable);
             if (snippet[0] === false) {
                 toExpand = `abbreviation: ${expandable}`;
-                abbr = emmet.expandAbbreviation(snippet[1], lang);
+                expand = emmet.expandAbbreviation(snippet[1], lang);
             } else {
-                log.debug(`Expandable is a snippet, ignore..`);
+                log.debug(`IsEmmetAbbreviation: expandable is a snippet, ignore..`);
                 require('notify/notify').send('Xemmet snippet inserted', {priority: "info", category: "xemmet"});
                 return [true, snippet[1]];
             }
-            if (abbr.trim().length === 0) {
-                log.error(`Emmet abbreviation is empty (invalid), got ${toExpand}`);
+            if (expand.trim().length === 0) {
+                log.error(`IsEmmetAbbreviation: Emmet abbreviation is empty (invalid), got ${toExpand}`);
                 return [false, ""];
             }
-            return [true, abbr];
+            log.debug(`IsEmmetAbbreviation: expand = ${expand}; snippet = ${snippet}`);
+            if (lang == "html") {
+                return [true, snippet[1]];
+            } else {
+                return [true, expand];
+            }
         } catch (e) {
-            log.error(`Invalid abbreviation: ${toExpand}`);
+            log.error(`IsEmmetAbbreviation: Invalid abbreviation: ${toExpand}`);
             return [false, ""];
         }
     };
@@ -197,11 +209,11 @@
         var views = require('ko/views');
         var lang = this._getRootLanguage(views.current().get('language').toLowerCase());
         if (e.keyCode === 9) { // tab key
-            log.debug('Processing tab press...');
+            log.debug('Listener: Processing tab press...');
             
             var toExpand = editor.getLine().replace(/\t|\s{2,}/gm, "");
             
-            log.debug(`Abbreviation before caret: ${toExpand}`);
+            log.debug(`Listener: Abbreviation before caret: ${toExpand}`);
             var abbreviation = this._isEmmetAbbreviation(toExpand, lang);
             if (abbreviation[0]) {
                 e.preventDefault();
