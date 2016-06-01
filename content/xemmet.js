@@ -278,11 +278,11 @@
         var views = require('ko/views');
         var lang = this._getRootLanguage(views.current().get('language').toLowerCase());
         if (e.keyCode === 9) { // tab key
+            if (this.prefs.getBool("xemmet_strict_mode", true) && ["html", "css"].indexOf(lang) == -1) {
+                log.info("Strict mode enabled, Xemmet is ignoring current language");
+                return true;
+            }
             if (e.ctrlKey) {
-                if (this.prefs.getBool("xemmet_strict_mode") && ["html", "css"].indexOf(lang) == -1) {
-                    log.info("Strict mode enabled, Xemmet is ignoring current language");
-                    return true;
-                }
                 log.debug("Listener: processing Ctrl+tab press...");
                 if (editor.getSelection().trim().length > 0) {
                     e.preventDefault();
