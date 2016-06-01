@@ -72,6 +72,11 @@
                     log.debug("Cannot find frame window, skipping injection");
                     continue;
                 }
+                var $ = require("ko/dom");
+                if ($("#xemmet-main", frameWindow.document).length > 0) {
+                    log.debug("The pref is already injected into current DOM, skipping");
+                    continue;
+                }
                 
                 if (!frameWindow.onCheckboxPrefChanged) {
                     frameWindow.onCheckboxPrefChanged = (e, pref) => {
@@ -87,6 +92,7 @@
                         editing = false;
                         if (typeof(snippet) != "undefined") {
                             config = {
+                                title: "Editing snippet " + snippet.name,
                                 label: "Snippet content:  ",
                                 value: snippet.text,
                                 multiline: true
@@ -94,6 +100,7 @@
                             editing = true;
                         } else {
                             config = {
+                                title: "Creating snippet",
                                 label: "Abbreviation text: ",
                                 value: "Name",
                                 label2: "Snippet content:  ",
@@ -101,7 +108,7 @@
                                 multiline2: true
                             };
                         }
-                        var data = prompt("Configuring a snippet", config);
+                        var data = prompt(null, config);
                         if (editing) {
                             if (data.trim().length === 0) return false;
                             e.target.value = `${snippet.name}: ${data}`;
@@ -115,7 +122,6 @@
                 
                 var cssSnippets = "";
                 var htmlSnippets = "";
-                var $ = require("ko/dom");
                 var usnippets = require('xemmet/extra/snippets').getUserSnippets();
                 for (var x in usnippets.css) {
                     var v = usnippets.css[x];
@@ -125,11 +131,11 @@
                     }).toString();
                 }
                 
-                for (var x in usnippets.html) {
-                    var v = usnippets.html[x];
+                for (var y in usnippets.html) {
+                    var d = usnippets.html[y];
                     htmlSnippets += $.create('label style="cursor: pointer"', {
-                        value: `${x}: ${v}`,
-                        onclick: `addOrEditAbbreviation(event, "html", {name: "${x}", text: "${v}"})`
+                        value: `${y}: ${d}`,
+                        onclick: `addOrEditAbbreviation(event, "html", {name: "${y}", text: "${d}"})`
                     }).toString();
                 }
                 // Add our DOM structure
@@ -140,53 +146,43 @@
                     ('vbox align="left"',
                         $.create
                         ('checkbox', {id:            prefname,
-                                     pref:          "true",
-                                     label:         "Prioritize toolbox snippets over Xemmet snippets",
-                                     prefstring:     prefname,
-                                     preftype:      "boolean",
-                                     oncommand:     'onCheckboxPrefChanged(event, "xemmet_snippets_are_important")'})
-                        ('checkbox', {id:           "strict_mode",
-                                     pref:          "true",
-                                     label:         "Expand abbreviations only in HTML & CSS",
-                                     prefstring:    "xemmet_strict_mode",
-                                     preftype:      "boolean",
-                                     oncommand:     'onCheckboxPrefChanged(event, "xemmet_strict_mode")'})
-                    )
-                );
-                sibling.after(options.toString());
-                sibling = $("#xemmet-main", frameWindow.document);
-                options = $.create('groupbox', {id: "xemmet-css"},
-                    $.create
-                    ('groupbox',
-                        $.create
-                        ('caption', {label: "Xemmet CSS snippets"})
-                        ('hbox align="center"',
+                                      pref:          "true",
+                                      label:         "Prioritize toolbox snippets over Xemmet snippets",
+                                      prefstring:     prefname,
+                                      preftype:      "boolean",
+                                      oncommand:     'onCheckboxPrefChanged(event, "xemmet_snippets_are_important")'})
+                        ('checkbox', {id:            "strict_mode",
+                                      pref:          "true",
+                                      label:         "Expand abbreviations only in HTML & CSS",
+                                      prefstring:    "xemmet_strict_mode",
+                                      preftype:      "boolean",
+                                      oncommand:     'onCheckboxPrefChanged(event, "xemmet_strict_mode")'})
+                        ('vbox align="left"',
                             $.create
-                            ('button', {label:          "Add a snippet",
-                                        oncommand:      'addOrEditAbbreviation(event, "css")',
-                                        flex:           '1'})
-                            ('vbox align="left"', {flex: 6}, cssSnippets)
+                            ('caption', {label: "Xemmet CSS snippets"})
+                            ('hbox align="center"',
+                                $.create
+                                ('button', {label:          "Add a snippet",
+                                            oncommand:      'addOrEditAbbreviation(event, "css")',
+                                            flex:           '1'})
+                                ('vbox align="left"', {flex: 6}, cssSnippets)
+                            )
+                        )
+                        ('vbox align="left"',
+                            $.create
+                            ('caption', {label: "Xemmet HTML snippets"})
+                            ('hbox align="center"',
+                                $.create
+                                ('button', {label:          "Add a snippet",
+                                            oncommand:      'addOrEditAbbreviation(event, "html")',
+                                            flex:           '1'})
+                                ('vbox align="left"', {flex: 6}, htmlSnippets)
+                            )
                         )
                     )
                 );
                 sibling.after(options.toString());
-                sibling = $("#xemmet-css", frameWindow.document);
-                options = $.create('groupbox', {id: "xemmet-html"},
-                    $.create
-                    ('groupbox',
-                        $.create
-                        ('caption', {label: "Xemmet HTML snippets"})
-                        ('hbox align="center"',
-                            $.create
-                            ('button', {label:          "Add a snippet",
-                                        oncommand:      'addOrEditAbbreviation(event, "html")',
-                                        flex:           '1'})
-                            ('vbox align="left"', {flex: 6}, htmlSnippets)
-                        )
-                    )
-                );
-                sibling.after(options.toString());
-                log.debug("Creating an injection..." + JSON.stringify(o));
+                log.debug("Created an injection: " + JSON.stringify(o));
             }
         }
     };
