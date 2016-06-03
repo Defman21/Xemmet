@@ -10,6 +10,8 @@
     };
     
     var loaded = false;
+    var inWrapMode = false;
+    var selection = "";
     
     this.debug = {};
     this.prefs = {};
@@ -206,7 +208,7 @@
                 expand = emmet.expandAbbreviation(object.text, lang);
             } else {
                 log.debug(`IsEmmetAbbreviation: expandable is a snippet, ignore..`);
-                require('notify/notify').send(`Xemmet ${object.snippet.type} snippet "${object.snippet.name}" inserted`, {priority: "info", category: "xemmet"});
+                require('notify/notify').send(`Xemmet: ${object.snippet.type} snippet "${object.snippet.name}" inserted`, {priority: "info", category: "xemmet"});
                 return [true, object.snippet.text];
             }
             if (expand.trim().length === 0) {
@@ -232,22 +234,33 @@
     
     this._proceedWrapSelection = (editor, lang) => {
         if (lang != "html") {
-            require('notify/notify').send("Xemmet Wrap Selection works only with HTML-based languages", {
+            require('notify/notify').send("Xemmet: Wrap Selection works only with HTML-based languages", {
                 priority: "info",
                 category: "xemmet"
             });
             return;
         }
-        var prompt = require('ko/dialogs').prompt("Enter Emmet abbreviation: ");
-        if (prompt.indexOf("{}") == -1) {
-            prompt += "{}"; // add placeholder for HTML, most CSS abbreviations already has a placeholder
+        
+        var wrap_with = editor.getLine().replace(/\t|\s{2,}/gm, "");
+        
+        var posStart = editor.getCursorPosition();
+        posStart.ch -= wrap_with.length;
+        var posEnd = editor.getCursorPosition();
+        
+        if (wrap_with.indexOf("{}") == -1) {
+            wrap_with += "{}"; // add placeholder for HTML, most CSS abbreviations already has a placeholder
         }
-        var abbreviation = this._isEmmetAbbreviation(prompt, lang);
+        
+        editor.setSelection(
+            posStart,
+            posEnd
+        );
+        
+        var abbreviation = this._isEmmetAbbreviation(wrap_with, lang);
         if (abbreviation[0]) {
             var insert = this._prepareTabstops(abbreviation[1], lang, "{[[replace]]}");
             var expand = this._expandAbbreviation(insert, lang, true);
             log.debug("ProceedWrapSelection: to insert: " + expand);
-            var selection = editor.getSelection();
             expand = expand.replace("[[replace]]", selection);
             try {
                 expand = beautify.html(expand, {
@@ -255,7 +268,7 @@
                     indent_char: "\t"
                 });
             } catch (e) {
-                require('notify/notify').send("Unable to beautify the result!", {
+                require('notify/notify').send("Xemmet: Unable to beautify the result!", {
                     priority: "warn",
                     category: "xemmet"
                 });
@@ -265,31 +278,51 @@
             ko.abbrev.insertAbbrevSnippet(snippet,
                                           require('ko/views').current().get());
         } else {
-            require('notify/notify').send(`Abbreviation "${prompt}" is invalid`, {
+            require('notify/notify').send(`Xemmet: Abbreviation "${wrap_with}" is invalid`, {
                 priority: "error",
                 category: "xemmet"
             });
-            return;
+            return false;
         }
+        return true;
     };
     
     this.onKeyDownListener = (e) => {
         var editor = require('ko/editor');
         var views = require('ko/views');
         var lang = this._getRootLanguage(views.current().get('language').toLowerCase());
+        if (e.keyCode === 27 && inWrapMode) {
+            require('notify/notify').send("Xemmet: Wrap Selection canceled", {
+                priority: "info",
+                category: "xemmet"
+            });
+            inWrapMode = false;
+            selection = "";
+            return true;
+        }
         if (e.keyCode === 9) { // tab key
             if (this.prefs.getBool("xemmet_strict_mode", true) && ["html", "css"].indexOf(lang) == -1) {
                 log.debug("Strict mode enabled, Xemmet is ignoring current language");
                 return true;
             }
-            if (e.ctrlKey) {
+            if (e.ctrlKey && !inWrapMode) {
                 log.debug("Listener: processing Ctrl+tab press...");
                 if (editor.getSelection().trim().length > 0) {
                     e.preventDefault();
-                    this._proceedWrapSelection(editor, lang);
+                    inWrapMode = true;
+                    selection = editor.getSelection();
+                    require('notify/notify').send("Xemmet: Your selection was saved, type your abbreviation", {
+                        priority: "info",
+                        category: "xemmet"
+                    });
                 } else {
                     log.debug("Listener: no selection found");
                     return true;
+                }
+            } else if (inWrapMode) {
+                inWrapMode = false;
+                if(this._proceedWrapSelection(editor, lang)) {
+                    e.preventDefault();
                 }
             } else {
                 log.debug('Listener: Processing tab press...');
