@@ -4,10 +4,12 @@
     const beautify = require('./sdk/beautify/beautify');
     const snips = require('./extra/snippets');
     const log = require('ko/logging').getLogger('xemmet');    
-    const sublangs = {
+    const baselangs = {
         html: ["html", "html5", "rhtml", "erb", "html.erb", "html.md"],
         css: ["css", "scss", "less"]
     };
+    
+    var sublangs = Object.assign({}, baselangs);
     
     var loaded = false;
     var inWrapMode = false;
@@ -33,6 +35,31 @@
         log.debug("Xemmet: injected a preference");
     };
     
+    (function() {
+        var p = require('ko/prefs');
+        
+        this.setBool = (name, value) => p.setBoolean(name, value);
+        this.setString = (name, value) => p.setString(name, value);
+        this.setLong = (name, value) => p.setLong(name, value);
+        
+        this.getBool = (name, value) => p.getBoolean(name, value);
+        this.getString = (name, value) => p.getString(name, value);
+        this.getLong = (name, value) => p.getLong(name, value);
+    }).apply(this.prefs);
+    
+    this.setLanguages = (html, css) => {
+        this.prefs.setString("xemmet_html_languages", html);
+        this.prefs.setString("xemmet_css_languages", css);
+        this.upgradeLanguages();
+    };
+    
+    this.upgradeLanguages = () => {
+        var custom_html_langs = this.prefs.getString("xemmet_html_languages").split(" ");
+        var custom_css_langs = this.prefs.getString("xemmet_css_languages").split(" ");
+        sublangs.html = baselangs.html.concat(custom_html_langs);
+        sublangs.css = baselangs.css.concat(custom_css_langs);
+    };
+    
     this.load = (silent) => {
         window.addEventListener('keydown', this.onKeyDownListener, true);
         log.setLevel(require('ko/logging').LOG_INFO);
@@ -42,6 +69,7 @@
         this.loadInjector();
         require('notify/categories').register('xemmet', {label: "Xemmet"});
         snips.load();
+        this.upgradeLanguages();
         if (typeof(silent) != "undefined" && silent) return;
         log.info("Xemmet loaded");
     };
@@ -95,18 +123,6 @@
             return property;
         };
     }).apply(this.debug, [this]);
-    
-    (function() {
-        var p = require('ko/prefs');
-        
-        this.setBool = (name, value) => p.setBoolean(name, value);
-        this.setString = (name, value) => p.setString(name, value);
-        this.setLong = (name, value) => p.setLong(name, value);
-        
-        this.getBool = (name, value) => p.getBoolean(name, value);
-        this.getString = (name, value) => p.getString(name, value);
-        this.getLong = (name, value) => p.getLong(name, value);
-    }).apply(this.prefs);
     
     this._createSnippet = (text, noIndent) => {
         return {
