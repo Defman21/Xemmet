@@ -14,7 +14,6 @@
             injections.push({
                 basename: o.basename,
                 siblingSelector: o.siblingSelector,
-                prefname: o.prefname,
                 caption: o.caption
             });
         }
@@ -41,7 +40,6 @@
             {
                 let basename =  o.basename,
                     siblingSelector =  o.siblingSelector,
-                    prefname = o.prefname,
                     caption = o.caption;
             
                 if (data.indexOf(basename) == -1)
@@ -77,75 +75,6 @@
                     log.debug("The pref is already injected into current DOM, skipping");
                     continue;
                 }
-                
-                if (!frameWindow.onCheckboxPrefChanged) {
-                    frameWindow.onCheckboxPrefChanged = (e, pref) => {
-                        require('xemmet/xemmet').prefs.setBool(pref, e.target.hasAttribute('checked'));
-                        log.debug("Changed preference " + pref + " to " + e.target.hasAttribute('checked'));
-                    };
-                }
-                
-                if (!frameWindow.addOrEditAbbreviation) {
-                    frameWindow.addOrEditAbbreviation = (e, lang, snippet) => {
-                        var prompt = require('ko/dialogs').prompt;
-                        var config, editing;
-                        editing = false;
-                        if (typeof(snippet) != "undefined") {
-                            config = {
-                                title: "Editing snippet " + snippet.name,
-                                label: "Snippet content:  ",
-                                value: snippet.text,
-                                multiline: true
-                            };
-                            editing = true;
-                        } else {
-                            config = {
-                                title: "Creating snippet",
-                                label: "Abbreviation text: ",
-                                value: "Name",
-                                label2: "Snippet content:  ",
-                                value2: "Emmet abbreviation",
-                                multiline2: true
-                            };
-                        }
-                        var data = prompt(null, config);
-                        if (editing) {
-                            if (data.trim().length === 0) return false;
-                            e.target.value = `${snippet.name}: ${data}`;
-                            require('xemmet/extra/snippets').add(lang, snippet.name, data);
-                        } else {
-                            if (data[0].trim().length === 0 || data[1].trim().length === 0) return false;
-                            require('xemmet/extra/snippets').add(lang, data[0], data[1]);
-                        }
-                    };
-                }
-                
-                if (!frameWindow.updateLanguages) {
-                    frameWindow.updateLanguages = () => {
-                        var css = $("#xemmet_css_langs", frameWindow.document).value();
-                        var html = $("#xemmet_html_langs", frameWindow.document).value();
-                        require('xemmet/xemmet').setLanguages(html, css);
-                    };
-                }
-                
-                var cssSnippets = "";
-                var htmlSnippets = "";
-                var usnippets = require('xemmet/extra/snippets').getUserSnippets();
-                for (var x in usnippets.css) {
-                    var v = usnippets.css[x];
-                    cssSnippets += $.create('label style="cursor: pointer"', {
-                        value: `${x}: ${v}`,
-                        onclick: `addOrEditAbbreviation(event, "css", {name: "${x}", text: "${v}"})`
-                    }).toString();
-                }
-                
-                for (var y in usnippets.html) {
-                    var d = usnippets.html[y];
-                    htmlSnippets += $.create('label style="cursor: pointer"', {
-                        value: `${y}: ${d}`,
-                        onclick: `addOrEditAbbreviation(event, "html", {name: "${y}", text: "${d}"})`
-                    }).toString();
-                }
                 // Add our DOM structure
                 var sibling = $(siblingSelector, frameWindow.document);
                 
@@ -159,57 +88,32 @@
                         $.create
                         ('textbox', {id:            "xemmet_css_langs",
                                      flex:          "1",
-                                     placeholder:   "Languages where Xemmet CSS actions should work",
+                                     placeholder:   "Additional CSS Language Names that Xemmet should run on",
                                      value:         css_value})
                         ('textbox', {id:            "xemmet_html_langs",
                                      flex:          "1",
-                                     placeholder:   "Languages where Xemmet HTML actions should work",
+                                     placeholder:   "Additional HTML Language Names that Xemmet should run on",
                                      value:         html_value})
-                        ('button', {label:          "Update languages",
-                                    oncommand:      'updateLanguages()'})
-                        ('vbox align="left"',
-                            $.create
-                            ('caption', {label: "Xemmet CSS snippets"})
-                            ('hbox align="center"',
-                                $.create
-                                ('button', {label:          "Add a snippet",
-                                            oncommand:      'addOrEditAbbreviation(event, "css")',
-                                            flex:           '1'})
-                                ('vbox align="left"', {flex: 6}, cssSnippets)
-                            )
-                        )
-                        ('vbox align="left"',
-                            $.create
-                            ('caption', {label: "Xemmet HTML snippets"})
-                            ('hbox align="center"',
-                                $.create
-                                ('button', {label:          "Add a snippet",
-                                            oncommand:      'addOrEditAbbreviation(event, "html")',
-                                            flex:           '1'})
-                                ('vbox align="left"', {flex: 6}, htmlSnippets)
-                            )
-                        )
                     )
                 );
                 sibling.after(options.toString());
                 var important_snippets = require('ko/ui/checkbox')
                                          .create("Prioritize toolbox snippets over Xemmet snippets");
-                important_snippets.checked(require('xemmet/xemmet').prefs.getBool("xemmet_snippets_are_important", true));
-                var strict_mode = require('ko/ui/checkbox')
-                                                    .create("Xemmet works only in HTML & CSS");
-                strict_mode.checked(require('xemmet/xemmet').prefs.getBool("xemmet_strict_mode", true));
-                var wrap_strict_mode = require('ko/ui/checkbox')
-                                                    .create("Wrap Selection works only in HTML");
-                wrap_strict_mode.checked(require('xemmet/xemmet').prefs.getBool("xemmet_wrap_strict_mode", true));
+                important_snippets.checked(require('xemmet/xemmet').prefs.getBool("xemmet_prioritize_snippets", true));
                 
-                strict_mode.element.setAttribute("oncommand","onCheckboxPrefChanged(event, 'xemmet_strict_mode')");
-                wrap_strict_mode.element.setAttribute("oncommand","onCheckboxPrefChanged(event, 'xemmet_wrap_strict_mode')");
-                important_snippets.element.setAttribute("oncommand","frameWindow.onCheckboxPrefChanged(event, 'xemmet_snippets_are_important')");
+                var strict_mode = require('ko/ui/checkbox')
+                                  .create("Xemmet only works for HTML and CSS based languages");
+                strict_mode.checked(require('xemmet/xemmet').prefs.getBool("xemmet_strict_mode", true));
+                
+                var wrap_strict_mode = require('ko/ui/checkbox')
+                                       .create("Wrap selection only works for HTML based languages");
+                wrap_strict_mode.checked(require('xemmet/xemmet').prefs.getBool("xemmet_wrap_strict_mode", true));
                 
                 var target = $("#xemmet-main-vbox", frameWindow.document);
                 target.prepend(wrap_strict_mode.$element);
                 target.prepend(strict_mode.$element);
                 target.prepend(important_snippets.$element);
+                
                 log.debug("Created an injection: " + JSON.stringify(o));
             }
         }
