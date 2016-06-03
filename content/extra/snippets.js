@@ -729,72 +729,15 @@
         }
     };
     
-    const io = require('ko/file');
-    const sys = require('sdk/system');
     const log = require('ko/logging').getLogger('xemmet');
     
-    var userSnippets = {
-        "css": {},
-        "html": {}
-    };
-    var snipPath = null;
+    this.load = () => {};
     
-    this.load = () => {
-        try {
-            var profPath = io.join(sys.pathFor("ProfD"), '..');
-            snipPath = io.join(profPath, 'snippets.xmt.json');
-            log.debug("Reading " + snipPath);
-            var file = io.read(snipPath, "r");
-            userSnippets = JSON.parse(file);
-            log.info("User snippets loaded");
-            log.debug(userSnippets);
-            return true;
-        } catch (e) {
-            log.info("Unable to load user snippets");
-            log.debug(e);
-            return true;
-        }
-    };
+    this.unload = () => {};    
     
-    this.unload = () => {
-        
-    };
-    
-    this.add = (lang, name, value) => {
-        if (["html", "css"].indexOf(lang) == -1) return false;
-        var isNew = true;
-        if (typeof(userSnippets[lang][name]) != "undefined") isNew = false;
-        userSnippets[lang][name] = value;
-        if (isNew) {
-            require('notify/notify').send(`Xemmet: Added new snippet "${name}"`);
-        } else {
-            require('notify/notify').send(`Xemmet: Updated snippet "${name}"`);            
-        }
-        this.save(true);
-        return true;
-    };
-    
-    this.save = (silent) => {
-        if (snipPath === null) return;
-        var file = io.open(snipPath, "w");
-        file.write(JSON.stringify(userSnippets));
-        file.close();
-        if (typeof(silent) != "undefined" && !silent) {
-            require('notify/notify').send("Xemmet: User Snippets has been saved", {
-                priority: "info",
-                category: "xemmet"
-            });
-        }
-        return true;
-    };
-    
-    this._getUserSnippet = (language, snippet) => {
-        if (language in userSnippets) {
-            if (snippet in userSnippets[language]) {
-                return {snippet: true, name: snippet, text: userSnippets[language][snippet], type: "user"};
-            }
-            return {snippet: false};
-        }
+    this._getUserSnippet = (lang, snippet) => {
+        var part = ko.abbrev.findAbbrevSnippet("xemmet_" + snippet, null, lang);
+        if (part !== null) return {snippet: true, name: "xemmet_" + snippet, data: part, user: true};
         return {snippet: false};
     };
     
@@ -807,7 +750,7 @@
         if (usnippet.snippet !== false) return usnippet;
         if (language in snippets) {
             if (snippet in snippets[language]) {
-                return {snippet: true, name: snippet, text: snippets[language][snippet], type: "built-in"};
+                return {snippet: true, name: snippet, data: snippets[language][snippet], user: false};
             }
             return {snippet: false};
         }
