@@ -1,58 +1,39 @@
 Xemmet
 ======
 
-## Current state: alpha
-
 Emmet for Komodo X.
 
 Features:
 
- * Expand abbreviation (by Tab) in HTML (+sub-languages, like RHTML) and
- CSS (+sub-languages, like SCSS)
- * Wrap Selection with Abbreviation (HTML-only)
+ * Expand abbreviations (by Tab) in: HTML, RHTML, ERB, CSS, SCSS, LESS
+ * Wrap Selection with Abbreviation in HTML
  * Custom snippets
 
-##### Note: Expand abbreviation works only if the abbreviation is on a new line.
+## Expand abbreviations
 
-##### Note 2: in CSS, there will be auto-completions by Komodo. You need to press Esc to get rid of them and then press Tab to expand your abbreviation.
+This is the main feature of this add-on. It could expand `div>h1{Hello}` to
+```html
+<div>
+    <h1>Hello</h1>
+</div>
+```
 
+See Emmet documentation for more information.
+
+## Wrap Selection
+
+In HTML, you can select a block of text or code, and press <kbd>Ctrl+Tab</kbd>
+to wrap the selection with an Emmet abbreviation. Xemmet will notice you
+when you Enter Wrap Abbreviation mode. Don't remove your selection, just start
+typing an abbreviation. Once you're done, press Tab to complete the action.
+
+To leave the mode, press Esc.
 
 ## Custom snippets
 
-You can add them via Console tab in bottom pane:
+You can add or modify your snippets in Preferences - Smart Editing.
 
-`require('xemmet/extra/snippets').add(language, name, value);`
+**NOTE:** new snippets won't appear immediately after you've added them.
 
-They will be automatically saved.
-
-If you want to update a snippet, just call `.add` again with the name of snippet you want to update. It will be replaced with the one you pass to
-the function.
-
-They are placed at `%komodo_user_dir%/snippets.xmt.json`.
-
-Format of the file:
-
-```json
-{
-    "css": {
-        "%snippet_name%": "%snippet_content%"
-    },
-    "html": {
-        "%snippet_name%": "%snippet_content%"
-    }
-}
-```
-
-`%snippet_content%` could be:
-
-* Emmet abbreviation
-* Raw HTML
-* Raw CSS
-
-## Wrap selection
-
-Create a selection, press Ctrl+Tab. You'll get a prompt for Emmet abbreviation.
-It **should** support custom snippets, but I didn't test it.
-
-Enter your abbreviation and press Enter. If there will be an error with
-beautifying your result, it will be inserted as is.
+To modify a snippet, just press on it. Your changes will be displayed
+immediately.
