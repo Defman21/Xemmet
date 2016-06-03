@@ -3,52 +3,44 @@ Xemmet
 
 Emmet for Komodo X.
 
-Features:
+This add-on implements only Expand Abbreviation and Wrap Selection features
+from Emmet. If you want to get all features, install [Emmet for Komodo][1]
 
- * Expand abbreviations (by Tab) in: HTML, RHTML, ERB, CSS, SCSS, LESS
- * Wrap Selection with Abbreviation in HTML
- * Custom snippets
- * Custom file formats where Xemmet should work
+[1]: https://github.com/Defman21/komodo-emmet
 
 ## Expand abbreviations
 
-This is the main feature of this add-on. It could expand `div>h1{Hello}` to
+This is the main feature of this add-on. It could expand
+`ul#nav>li.item$*4>a{Item $}` to
 ```html
-<div>
-    <h1>Hello</h1>
-</div>
+<ul id="nav">
+    <li class="item1"><a>Item 1</a></li>
+    <li class="item2"><a>Item 2</a></li>
+    <li class="item3"><a>Item 3</a></li>
+    <li class="item4"><a>Item 4</a></li>
+</ul>
 ```
 
 See Emmet documentation for more information.
 
 ## Wrap Selection
 
-In HTML, you can select a block of text or code, and press <kbd>Ctrl+Tab</kbd>
-to wrap the selection with an Emmet abbreviation. Xemmet will notice you
-when you Enter Wrap Abbreviation mode. Don't remove your selection, just start
-typing an abbreviation. Once you're done, press Tab to complete the action.
+In HTML, you can make a selection and press <kbd>Ctrl+Tab</kbd>
+to enter Wrap Selection mode. Replace your selection with Emmmet
+abbreviation. Once you're done, press Tab to wrap your selection with
+your abbreviation.
 
-By default, this feature works only in HTML, RHTML and ERB (to avoid bugs).
-If you want to able to use this feature in any language, go to Prefs - Smart
-Editing, find Xemmet and disable **both** "Xemmet works only in HTML & CSS" and
-"Wrap Selection works only in HTML".
+By default, this feature works only in HTML based languages.
+You can disable this limitation in Prefs - Smart Editing.
 
 I'd not recommend to disable these options.
 
-To leave the mode, press Esc.
+To leave this mode, press Esc.
 
 ## Custom snippets
 
-You can add or modify your snippets in Preferences - Smart Editing.
+To add a new snippet, first create folders "html" and "css" in
+`Komodo Toolbox- Abbreviations`. Then create a snippet inside one of these
+folders. The name of your snippet should starts with `xemmet_`.
 
-**NOTE:** new snippets won't appear immediately after you've added them.
-
-To modify a snippet, just press on it. Your changes will be displayed
-immediately.
-
-## Custom file formats
-
-By default, Xemmet works only in specific HTML-/CSS-like languages (such as
-ERB, LESS, CSS). If you want to add more languages where Xemmet should work,
-go to Prefs - Smart Editing. There are 2 textboxes where you can write languages
-where you want to see Xemmet actions.
+See Komodo Documentation for more information about Snippets.
