@@ -159,11 +159,11 @@
                         $.create
                         ('textbox', {id:            "xemmet_css_langs",
                                      flex:          "1",
-                                     placeholder:   "CSS-like file formats where Xemmet should work",
+                                     placeholder:   "Languages where Xemmet CSS actions should work",
                                      value:         css_value})
                         ('textbox', {id:            "xemmet_html_langs",
                                      flex:          "1",
-                                     placeholder:   "HTMl-like file formats where Xemmet should work",
+                                     placeholder:   "Languages where Xemmet HTML actions should work",
                                      value:         html_value})
                         ('button', {label:          "Update languages",
                                     oncommand:      'updateLanguages()'})

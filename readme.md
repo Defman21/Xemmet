@@ -8,6 +8,7 @@ Features:
  * Expand abbreviations (by Tab) in: HTML, RHTML, ERB, CSS, SCSS, LESS
  * Wrap Selection with Abbreviation in HTML
  * Custom snippets
+ * Custom file formats where Xemmet should work
 
 ## Expand abbreviations
 
@@ -44,3 +45,10 @@ You can add or modify your snippets in Preferences - Smart Editing.
 
 To modify a snippet, just press on it. Your changes will be displayed
 immediately.
+
+## Custom file formats
+
+By default, Xemmet works only in specific HTML-/CSS-like languages (such as
+ERB, LESS, CSS). If you want to add more languages where Xemmet should work,
+go to Prefs - Smart Editing. There are 2 textboxes where you can write languages
+where you want to see Xemmet actions.
