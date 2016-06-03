@@ -228,7 +228,7 @@
             
             if (expand.trim().length === 0)
             {
-                log.error(`_isAbbr: Emmet abbreviation is empty (invalid)`);
+                log.debug(`_isAbbr: Emmet abbreviation is empty (invalid)`);
                 return {
                     success: false
                 };
