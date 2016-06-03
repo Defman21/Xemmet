@@ -10,6 +10,10 @@
                "markdown"],
         css: ["css", "scss", "less"]
     };
+    const beautify_config = {
+        indent_size: 1,
+        indent_char: "\t"
+    };
     
     var sublangs = Object.assign({}, baselangs);
     
@@ -181,10 +185,7 @@
             }
             if (lang == "html")
             {
-                expand = beautify.html(expand, {
-                    indent_size: 1,
-                    indent_char: "\t"
-                });
+                expand = beautify.html(expand, beautify_config);
             }
             return expand;
         } catch (e)
@@ -284,10 +285,7 @@
             expand = expand.replace("[[replace]]", selection);
             try
             {
-                expand = beautify.html(expand, {
-                    indent_size: 1,
-                    indent_char: "\t"
-                });
+                expand = beautify.html(expand, beautify_config);
             } catch (e)
             {
                 require('notify/notify').send("Xemmet: Unable to beautify the result!", {
