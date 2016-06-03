@@ -120,6 +120,14 @@
                     };
                 }
                 
+                if (!frameWindow.updateLanguages) {
+                    frameWindow.updateLanguages = () => {
+                        var css = $("#xemmet_css_langs", frameWindow.document).value();
+                        var html = $("#xemmet_html_langs", frameWindow.document).value();
+                        require('xemmet/xemmet').setLanguages(html, css);
+                    };
+                }
+                
                 var cssSnippets = "";
                 var htmlSnippets = "";
                 var usnippets = require('xemmet/extra/snippets').getUserSnippets();
@@ -140,29 +148,25 @@
                 }
                 // Add our DOM structure
                 var sibling = $(siblingSelector, frameWindow.document);
+                
+                var html_value = require('xemmet/xemmet').prefs.getString("xemmet_html_languages", "");
+                var css_value = require('xemmet/xemmet').prefs.getString("xemmet_css_languages", "");
+                
                 var options = $.create("groupbox", {id: "xemmet-main"},
                     $.create
                     ('caption', {label: caption})
-                    ('vbox align="left"',
+                    ('vbox align="left"', {id: "xemmet-main-vbox"},
                         $.create
-                        ('checkbox', {id:            prefname,
-                                      pref:          "true",
-                                      label:         "Prioritize toolbox snippets over Xemmet snippets",
-                                      prefstring:     prefname,
-                                      preftype:      "boolean",
-                                      oncommand:     'onCheckboxPrefChanged(event, "xemmet_snippets_are_important")'})
-                        ('checkbox', {id:            "strict_mode",
-                                      pref:          "true",
-                                      label:         "Xemmet works only in HTML & CSS",
-                                      prefstring:    "xemmet_strict_mode",
-                                      preftype:      "boolean",
-                                      oncommand:     'onCheckboxPrefChanged(event, "xemmet_strict_mode")'})
-                        ('checkbox', {id:            "wrap_strict_mode",
-                                      pref:          "true",
-                                      label:         "Wrap Selection works only in HTML",
-                                      prefstring:    "xemmet_wrap_strict_mode",
-                                      preftype:      "boolean",
-                                      oncommand:     'onCheckboxPrefChanged(event, "xemmet_wrap_strict_mode")'})
+                        ('textbox', {id:            "xemmet_css_langs",
+                                     flex:          "1",
+                                     placeholder:   "CSS-like file formats where Xemmet should work",
+                                     value:         css_value})
+                        ('textbox', {id:            "xemmet_html_langs",
+                                     flex:          "1",
+                                     placeholder:   "HTMl-like file formats where Xemmet should work",
+                                     value:         html_value})
+                        ('button', {label:          "Update languages",
+                                    oncommand:      'updateLanguages()'})
                         ('vbox align="left"',
                             $.create
                             ('caption', {label: "Xemmet CSS snippets"})
@@ -188,6 +192,24 @@
                     )
                 );
                 sibling.after(options.toString());
+                var important_snippets = require('ko/ui/checkbox')
+                                         .create("Prioritize toolbox snippets over Xemmet snippets");
+                important_snippets.checked(require('xemmet/xemmet').prefs.getBool("xemmet_snippets_are_important", true));
+                var strict_mode = require('ko/ui/checkbox')
+                                                    .create("Xemmet works only in HTML & CSS");
+                strict_mode.checked(require('xemmet/xemmet').prefs.getBool("xemmet_strict_mode", true));
+                var wrap_strict_mode = require('ko/ui/checkbox')
+                                                    .create("Wrap Selection works only in HTML");
+                wrap_strict_mode.checked(require('xemmet/xemmet').prefs.getBool("xemmet_wrap_strict_mode", true));
+                
+                strict_mode.element.setAttribute("oncommand","onCheckboxPrefChanged(event, 'xemmet_strict_mode')");
+                wrap_strict_mode.element.setAttribute("oncommand","onCheckboxPrefChanged(event, 'xemmet_wrap_strict_mode')");
+                important_snippets.element.setAttribute("oncommand","frameWindow.onCheckboxPrefChanged(event, 'xemmet_snippets_are_important')");
+                
+                var target = $("#xemmet-main-vbox", frameWindow.document);
+                target.prepend(wrap_strict_mode.$element);
+                target.prepend(strict_mode.$element);
+                target.prepend(important_snippets.$element);
                 log.debug("Created an injection: " + JSON.stringify(o));
             }
         }
