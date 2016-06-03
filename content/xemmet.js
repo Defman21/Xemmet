@@ -35,7 +35,7 @@
     
     this.load = (silent) => {
         window.addEventListener('keydown', this.onKeyDownListener, true);
-        log.setLevel(require('ko/logging').LOG_DEBUG);
+        log.setLevel(require('ko/logging').LOG_INFO);
         if (!loaded) {
             loaded = true;
         }
