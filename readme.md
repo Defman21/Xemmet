@@ -27,6 +27,13 @@ to wrap the selection with an Emmet abbreviation. Xemmet will notice you
 when you Enter Wrap Abbreviation mode. Don't remove your selection, just start
 typing an abbreviation. Once you're done, press Tab to complete the action.
 
+By default, this feature works only in HTML, RHTML and ERB (to avoid bugs).
+If you want to able to use this feature in any language, go to Prefs - Smart
+Editing, find Xemmet and disable **both** "Xemmet works only in HTML & CSS" and
+"Wrap Selection works only in HTML".
+
+I'd not recommend to disable these options.
+
 To leave the mode, press Esc.
 
 ## Custom snippets
