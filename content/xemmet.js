@@ -33,7 +33,7 @@
     
     this.load = (silent) => {
         window.addEventListener('keydown', this.onKeyDownListener, true);
-        log.setLevel(require('ko/logging').LOG_DEBUG);
+        log.setLevel(require('ko/logging').LOG_INFO);
         if (!loaded) {
             loaded = true;
         }
@@ -84,7 +84,7 @@
         };
         
         this.setLogLevel = (level) => {
-            getConst("Logger").setLevel(logLevels[level]);
+            this.get("Logger").setLevel(logLevels[level]);
         };
         
         this.get = (_property) => {
@@ -279,7 +279,7 @@
         var lang = this._getRootLanguage(views.current().get('language').toLowerCase());
         if (e.keyCode === 9) { // tab key
             if (this.prefs.getBool("xemmet_strict_mode", true) && ["html", "css"].indexOf(lang) == -1) {
-                log.info("Strict mode enabled, Xemmet is ignoring current language");
+                log.debug("Strict mode enabled, Xemmet is ignoring current language");
                 return true;
             }
             if (e.ctrlKey) {
