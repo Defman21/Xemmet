@@ -35,7 +35,7 @@
     
     this.load = (silent) => {
         window.addEventListener('keydown', this.onKeyDownListener, true);
-        log.setLevel(require('ko/logging').LOG_INFO);
+        log.setLevel(require('ko/logging').LOG_DEBUG);
         if (!loaded) {
             loaded = true;
         }
@@ -215,7 +215,7 @@
                 log.error(`IsEmmetAbbreviation: Emmet abbreviation is empty (invalid), got ${toExpand}`);
                 return [false, ""];
             }
-            log.debug(`IsEmmetAbbreviation: expand = ${expand}; object = ${object}`);
+            log.debug(`IsEmmetAbbreviation: expand = ${expand}; object = ${JSON.stringify(object)}`);
             if (lang == "html") {
                 return [true, object.text];
             } else {
@@ -232,15 +232,8 @@
         return true;
     };
     
-    this._proceedWrapSelection = (editor, lang) => {
-        if (lang != "html") {
-            require('notify/notify').send("Xemmet: Wrap Selection works only with HTML-based languages", {
-                priority: "info",
-                category: "xemmet"
-            });
-            return;
-        }
-        
+    this._proceedWrapSelection = (editor) => {
+        var lang = "html";
         var wrap_with = editor.getLine().replace(/\t|\s{2,}/gm, "");
         
         var posStart = editor.getCursorPosition();
@@ -248,7 +241,7 @@
         var posEnd = editor.getCursorPosition();
         
         if (wrap_with.indexOf("{}") == -1) {
-            wrap_with += "{}"; // add placeholder for HTML, most CSS abbreviations already has a placeholder
+            wrap_with += "{}"; // add placeholder
         }
         
         editor.setSelection(
@@ -308,6 +301,14 @@
             if (e.ctrlKey && !inWrapMode) {
                 log.debug("Listener: processing Ctrl+tab press...");
                 if (editor.getSelection().trim().length > 0) {
+                    if (this.prefs.getBool("xemmet_wrap_strict_mode", true) && lang != "html") {
+                        require('notify/notify').send("Xemmet: Wrap Selection works only in HTML", {
+                            priority: "info",
+                            category: "xemmet"
+                        });
+                        e.preventDefault(); // prevent jumping to another tab
+                        return true;
+                    }
                     e.preventDefault();
                     inWrapMode = true;
                     selection = editor.getSelection();
@@ -315,8 +316,9 @@
                         priority: "info",
                         category: "xemmet"
                     });
+                    log.info("Selection: " + selection);
                 } else {
-                    log.debug("Listener: no selection found");
+                    log.debug("Listener: no selection found or xemmet_wrap_strict_mode is enabled");
                     return true;
                 }
             } else if (inWrapMode) {

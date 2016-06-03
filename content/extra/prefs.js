@@ -153,10 +153,16 @@
                                       oncommand:     'onCheckboxPrefChanged(event, "xemmet_snippets_are_important")'})
                         ('checkbox', {id:            "strict_mode",
                                       pref:          "true",
-                                      label:         "Expand abbreviations only in HTML & CSS",
+                                      label:         "Xemmet works only in HTML & CSS",
                                       prefstring:    "xemmet_strict_mode",
                                       preftype:      "boolean",
                                       oncommand:     'onCheckboxPrefChanged(event, "xemmet_strict_mode")'})
+                        ('checkbox', {id:            "wrap_strict_mode",
+                                      pref:          "true",
+                                      label:         "Wrap Selection works only in HTML",
+                                      prefstring:    "xemmet_wrap_strict_mode",
+                                      preftype:      "boolean",
+                                      oncommand:     'onCheckboxPrefChanged(event, "xemmet_wrap_strict_mode")'})
                         ('vbox align="left"',
                             $.create
                             ('caption', {label: "Xemmet CSS snippets"})
