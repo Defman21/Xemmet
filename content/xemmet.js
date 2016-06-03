@@ -5,7 +5,9 @@
     const snips = require('./extra/snippets');
     const log = require('ko/logging').getLogger('xemmet');    
     const baselangs = {
-        html: ["html", "html5", "rhtml", "erb", "html.erb", "html.md"],
+        html: ["html", "html5", "rhtml",
+               "erb", "html.erb", "html.md",
+               "markdown"],
         css: ["css", "scss", "less"]
     };
     
