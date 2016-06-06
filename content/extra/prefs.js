@@ -1,6 +1,6 @@
 (function() {
     
-    const log = require("ko/logging").getLogger("xemmet")
+    const log = require("ko/logging").getLogger("xemmet");
     const {Cc, Ci} = require("chrome");
     
     var injectObserver;
@@ -77,10 +77,6 @@
                 }
                 // Add our DOM structure
                 var sibling = $(siblingSelector, frameWindow.document);
-                
-                var html_value = require('xemmet/xemmet').prefs.getString("xemmet_html_languages", "");
-                var css_value = require('xemmet/xemmet').prefs.getString("xemmet_css_languages", "");
-                
                 var options = $.create("groupbox", {id: "xemmet-main"},
                     $.create
                     ('caption', {label: caption})
@@ -88,12 +84,16 @@
                         $.create
                         ('textbox', {id:            "xemmet_css_langs",
                                      flex:          "1",
-                                     placeholder:   "Additional CSS Language Names that Xemmet should run on",
-                                     value:         css_value})
+                                     pref:          "true",
+                                     prefstring:    "xemmet_css_languages",
+                                     prefattribute: "value",
+                                     placeholder:   "Additional CSS Language Names that Xemmet should run on"})
                         ('textbox', {id:            "xemmet_html_langs",
                                      flex:          "1",
-                                     placeholder:   "Additional HTML Language Names that Xemmet should run on",
-                                     value:         html_value})
+                                     pref:          "true",
+                                     prefstring:    "xemmet_html_languages",
+                                     prefattribute: "value",
+                                     placeholder:   "Additional HTML Language Names that Xemmet should run on"})
                     )
                 );
                 sibling.after(options.toString());
@@ -109,10 +109,15 @@
                                        .create("Wrap selection only works for HTML based languages");
                 wrap_strict_mode.checked(require('xemmet/xemmet').prefs.getBool("xemmet_wrap_strict_mode", true));
                 
+                var xemmet_enabled = require('ko/ui/checkbox')
+                                     .create("Enable Xemmet");
+                xemmet_enabled.checked(require('xemmet/xemmet').prefs.getBool("xemmet_enabled", true));
+                
                 var target = $("#xemmet-main-vbox", frameWindow.document);
                 target.prepend(wrap_strict_mode.$element);
                 target.prepend(strict_mode.$element);
                 target.prepend(important_snippets.$element);
+                target.prepend(xemmet_enabled.$element);
                 
                 log.debug("Created an injection: " + JSON.stringify(o));
             }

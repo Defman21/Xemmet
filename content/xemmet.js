@@ -15,7 +15,7 @@
         indent_char: "\t"
     };
     
-    var sublangs = Object.assign({}, baselangs);
+    var sublangs = {html: [], css: []};
     
     var loaded = false;
     var inWrapMode = false;
@@ -57,14 +57,27 @@
     {
         var custom_html_langs = this.prefs.getString("xemmet_html_languages").split(" ");
         var custom_css_langs = this.prefs.getString("xemmet_css_languages").split(" ");
-        sublangs.html = baselangs.html.concat(custom_html_langs);
-        sublangs.css = baselangs.css.concat(custom_css_langs);
+        sublangs.html = custom_html_langs;
+        sublangs.css = custom_css_langs;
     };
     
     this.load = (silent) =>
     {
+        if (!this.prefs.getBool("xemmet_enabled", true)) return;
+        try
+        {
+            this.prefs.getString('xemmet_css_languages');
+            this.prefs.getString('xemmet_html_languages');
+        } catch (e) // first run
+        {
+            this.prefs.setString("xemmet_css_languages",
+                                 baselangs.css.join(" "));
+            this.prefs.setString("xemmet_html_languages",
+                                 baselangs.html.join(" "));
+        }
         window.addEventListener('keydown', this.onKeyDownListener, true);
-        log.setLevel(require('ko/logging').LOG_INFO);
+        window.addEventListener('editor_view_opened', this.onViewOpened, true);
+        log.setLevel(require('ko/logging').LOG_DEBUG);
         if (!loaded)
         {
             loaded = true;
@@ -80,6 +93,7 @@
     this.unload = (silent) =>
     {
         window.removeEventListener('keydown', this.onKeyDownListener, true);
+        window.removeEventListener('editor_view_opened', this.onViewOpened, true);
         loaded = false;
         snips.unload();
         if (typeof(silent) != "undefined" && silent) return;
@@ -166,6 +180,13 @@
         if (sublangs.html.indexOf(language) > -1) return "html";
         if (sublangs.css.indexOf(language) > -1) return "css";
         return language;
+    };
+    
+    this._isEnabledLang = (lang) =>
+    {
+        if (sublangs.html.indexOf(lang) > -1 ||
+            sublangs.css.indexOf(lang) > -1) return true;
+        return false;
     };
     
     this._getSnippet = (language, text) =>
@@ -308,11 +329,17 @@
         return true;
     };
     
+    this.onViewOpened = () =>
+    {
+        this._upgradeLanguages();
+    };
+    
     this.onKeyDownListener = (e) =>
     {
         var editor = require('ko/editor');
         var views = require('ko/views');
-        var lang = this._getLang(views.current().get('language').toLowerCase());
+        var _lang = views.current().get('language').toLowerCase();
+        var lang = this._getLang(_lang);
         
         if (e.keyCode === 27 && inWrapMode)
         { // esc key
@@ -327,7 +354,7 @@
         if (e.keyCode === 9)
         { // tab key
             if (this.prefs.getBool("xemmet_strict_mode", true) &&
-                ["html", "css"].indexOf(lang) == -1)
+                !this._isEnabledLang(_lang))
             {
                 log.debug("Strict mode enabled, Xemmet is ignoring current language");
                 return true;
