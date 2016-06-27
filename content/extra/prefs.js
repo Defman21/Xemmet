@@ -25,7 +25,6 @@
         // Register our observer
         if ( ! injectObserver)
         {
-            console.log(injectObserver);
             injectObserver = true;
             
             var observerSvc = Cc["@mozilla.org/observer-service;1"].getService(Ci.nsIObserverService);
@@ -38,6 +37,7 @@
         {
             for (let o of injections)
             {
+                log.debug(JSON.stringify(o));
                 let basename =  o.basename,
                     siblingSelector =  o.siblingSelector,
                     caption = o.caption;

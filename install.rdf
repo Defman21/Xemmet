@@ -5,7 +5,7 @@
         <em:unpack>true</em:unpack>
         <em:id>xemmet@addons.defman.me</em:id>
         <em:name>Xemmet</em:name>
-        <em:version>0.6.0</em:version>
+        <em:version>0.6.1</em:version>
         <em:description>Emmet for Komodo X</em:description>
         <em:creator>Sergey Kislyakov</em:creator>
         <em:homepageURL>//defman.me/projects/xemmet</em:homepageURL>

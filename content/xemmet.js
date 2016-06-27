@@ -3,7 +3,8 @@
     const emmet = require('./sdk/emmet');
     const beautify = require('./sdk/beautify/beautify');
     const snips = require('./extra/snippets');
-    const log = require('ko/logging').getLogger('xemmet');    
+    const log = require('ko/logging').getLogger('xemmet');
+    const logLevel = require('ko/logging').LOG_INFO;
     const baselangs = {
         html: ["html", "html5", "rhtml",
                "erb", "html.erb", "html.md",
@@ -47,7 +48,7 @@
     {
         _prefs.injectPref({
             basename: "pref-editsmart",
-            siblingSelector: "#collaboration_groupbox",
+            siblingSelector: "#highlightvariable_groupbox",
             caption: "Xemmet"
         });
         log.debug("Xemmet: injected a preference");
@@ -77,7 +78,7 @@
         }
         window.addEventListener('keydown', this.onKeyDownListener, true);
         window.addEventListener('editor_view_opened', this.onViewOpened, true);
-        log.setLevel(require('ko/logging').LOG_DEBUG);
+        log.setLevel(logLevel);
         if (!loaded)
         {
             loaded = true;
