@@ -339,6 +339,7 @@
         var editor = require('ko/editor');
         var views = require('ko/views');
         var _lang = views.current().get('language').toLowerCase();
+        var koDoc = views.current().get('koDoc');
         var lang = this._getLang(_lang);
         
         if (e.keyCode === 27 && inWrapMode)
@@ -399,8 +400,16 @@
             } else
             {
                 log.debug('Listener: Processing tab press...');
-                
-                var toExpand = editor.getLine().replace(/\t|\s{2,}/gm, "");
+                var toExpand, isSelection;
+                if (editor.getSelection().length === 0)
+                {
+                    toExpand = editor.getLine().replace(/\t|\s{2,}/gm, "");
+                    isSelection = false;
+                } else if (!koDoc.hasTabstopInsertionTable)
+                {
+                    toExpand = editor.getSelection();
+                    isSelection = true;
+                }
                 
                 log.debug(`Listener: string before caret: ${toExpand}`);
                 var abbreviation = this._isAbbr(toExpand, lang);
@@ -409,20 +418,26 @@
                 {
                     var toInsert, expand;
                     e.preventDefault();
-                    if (!abbreviation.abbrev) {
+                    if (!abbreviation.abbrev)
+                    {
                         toInsert = this._prepare(abbreviation.data, lang);
                         expand = this._expand(toInsert, lang);
                     }
-                    var posStart = editor.getCursorPosition();
-                    posStart.ch -= toExpand.length;
-                    var posEnd = editor.getCursorPosition();
                     
-                    editor.setSelection(
-                        posStart,
-                        posEnd
-                    );
+                    if (!isSelection)
+                    {
+                        var posStart = editor.getCursorPosition();
+                        posStart.ch -= toExpand.length;
+                        var posEnd = editor.getCursorPosition();
+                        
+                        editor.setSelection(
+                            posStart,
+                            posEnd
+                        );
+                        
+                        editor.replaceSelection(""); // remove abbreviation
+                    }
                     
-                    editor.replaceSelection(""); // remove abbreviation
                     if (abbreviation.abbrev) {
                         ko.abbrev.insertAbbrevSnippet(abbreviation.data,
                                                       require('ko/views').current().get());
