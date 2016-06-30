@@ -8,7 +8,7 @@
     const baselangs = {
         html: ["html", "html5", "rhtml",
                "erb", "html.erb", "html.md",
-               "markdown"],
+               "markdown", "php"],
         css: ["css", "scss", "less"]
     };
     const beautify_config = {
