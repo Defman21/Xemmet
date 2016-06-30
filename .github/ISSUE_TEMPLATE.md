@@ -1,17 +1,10 @@
 ### Short summary
 
-<!-- Information about the issue or enhancement -->
-
-It:
-
- * must ...
- * should ...
- * could ...
 
 
 ### Information
 
-_Kemmet version:_ 
+_Xemmet version:_ 
 
 _OS:_ 
 
