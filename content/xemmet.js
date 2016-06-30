@@ -355,6 +355,10 @@
         }
         if (e.keyCode === 9)
         { // tab key
+            if (e.shiftKey)
+            {
+                return true; // Komodo/KomodoEdit/issues/1774
+            }
             if (this.prefs.getBool("xemmet_strict_mode", true) &&
                 !this._isEnabledLang(_lang))
             {
