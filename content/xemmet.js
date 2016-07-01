@@ -4,7 +4,7 @@
     const beautify = require('./sdk/beautify/beautify');
     const snips = require('./extra/snippets');
     const log = require('ko/logging').getLogger('xemmet');
-    const logLevel = require('ko/logging').LOG_INFO;
+    const logLevel = require('ko/logging').LOG_DEBUG;
     const baselangs = {
         html: ["html", "html5", "rhtml",
                "erb", "html.erb", "html.md",
@@ -192,7 +192,7 @@
     
     this._getSnippet = (language, text) =>
     {
-        return snips.getSnippet(language, text);
+        return snips.get(language, text);
     };
     
     this._expand = (string, lang, no_beautify) =>
@@ -264,7 +264,8 @@
             };
         } catch (e)
         {
-            log.error(`_isAbbr: Invalid abbreviation: ${toExpand}`);
+            log.error(`_isAbbr: Invalid abbreviation: ${expand}`);
+            log.exception(e);
             return {
                 success: false
             };
