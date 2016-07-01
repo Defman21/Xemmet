@@ -748,7 +748,13 @@
         var finalSnippet = false;
         if (lang in snippets) {
             if (snippet in snippets[lang]) {
-                finalSnippet = this._getBuilinSnippetRecursive(lang, snippets[lang][snippet]) || snippets[lang][snippet];
+                if (require('xemmet/xemmet').prefs.getBool("xemmet_recursive_search", false))
+                {
+                    finalSnippet = this._getBuilinSnippetRecursive(lang, snippets[lang][snippet]) || snippets[lang][snippet];
+                } else
+                {
+                    finalSnippet = snippets[lang][snippet];
+                }
             }
         }
         return finalSnippet;
