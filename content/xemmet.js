@@ -375,9 +375,9 @@
         }
         if (e.keyCode === 9)
         { // tab key
-            if (e.shiftKey)
+            if (e.shiftKey || koDoc.hasTabstopInsertionTable)
             {
-                return true; // Komodo/KomodoEdit/issues/1774
+                return true; // Komodo/KomodoEdit/issues/{1774,1777}
             }
             if (this.prefs.getBool("xemmet_strict_mode", true) &&
                 !this._isEnabledLang(_lang))
@@ -422,20 +422,13 @@
                 {
                     e.preventDefault();
                 }
-            } else
+            } else if (editor.getSelection().length === 0)
             {
                 log.debug('Listener: Processing tab press...');
-                var toExpand, isSelection;
-                if (editor.getSelection().length === 0)
-                {
-                    var line = editor.getLine().substring(0, editor.getCursorPosition().ch);
-                    toExpand = line.replace(/\t|\s{2,}/gm, "");
-                    isSelection = false;
-                } else if (!koDoc.hasTabstopInsertionTable)
-                {
-                    toExpand = editor.getSelection();
-                    isSelection = true;
-                }
+                var toExpand, isSelection, line;
+                line = editor.getLine().substring(0, editor.getCursorPosition().ch);
+                toExpand = line.replace(/\t|\s{2,}/gm, "");
+                isSelection = false;
                 
                 log.debug(`Listener: string before caret: ${toExpand}`);
                 var abbreviation = this._isAbbr(toExpand, lang);
@@ -477,6 +470,7 @@
                     if (abbreviation.abbrev) {
                         ko.abbrev.insertAbbrevSnippet(abbreviation.data,
                                                       require('ko/views').current().get());
+                        editor.scimoz().endUndoAction();
                         return;
                     }
                     var tempSnippet = this._createSnippet(expand, false);
