@@ -233,12 +233,9 @@
         }
         try
         {
-            var expand;
-            var object = this._getSnippet(lang, expandable);
-            if (object.snippet === false)
-            {
-                expand = this._extractAbbr(expandable);
-            } else
+            var expand = this._extractAbbr(expandable);
+            var object = this._getSnippet(lang, expand);
+            if (object.snippet)
             {
                 log.debug(`_isAbbr: expandable is a snippet, ignore..`);
                 require('notify/notify')
@@ -250,7 +247,8 @@
                 return {
                     success: true,
                     abbrev: object.user,
-                    data: object.data
+                    data: object.data,
+                    length: object.length
                 };
             }
             
@@ -265,7 +263,8 @@
             return {
                 success: true,
                 abbrev: false,
-                data: expand
+                data: expand,
+                length: expand.length
             };
         } catch (e)
         {
@@ -434,21 +433,27 @@
                 {
                     log.debug("Listener: inserting abbreviation");
                     editor.scimoz().beginUndoAction();
-                    var toInsert, expand;
+                    var toInsert, expand, len;
                     e.preventDefault();
                     if (!abbreviation.abbrev)
                     {
                         toInsert = this._prepare(abbreviation.data, lang);
                         expand = this._expand(toInsert, lang);
+                        expand = this._prepare(expand, lang); // emmet inserts ${} for proper css
                     }
+                    
+                    len = abbreviation.length;
                     
                     log.debug(`> ${expand}`);
                     
                     if (!isSelection)
                     {
                         var posStart = editor.getCursorPosition();
-                        posStart.ch -= abbreviation.data.length;
+                        posStart.ch -= len;
                         var posEnd = editor.getCursorPosition();
+                        
+                        log.debug(JSON.stringify(posStart));
+                        log.debug(JSON.stringify(posEnd));
                         
                         editor.setSelection(
                             posStart,

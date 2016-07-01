@@ -584,7 +584,7 @@
             "cc:ie6": "<!--[if lte IE 6]>\n\t${child}\n<![endif]-->",
             "ccie": "<!--[if IE]>\n\t${child}\n<![endif]-->",
             "ccnoie": "<!--[if !IE]><!-->\n\t${child}\n<!--<![endif]-->",
-            "!": "<!doctype html>\n<html lang='${en}'>\n<head>\n\t<meta charset='UTF-8'>\n\t<title>${title}</title>\n</head>\n<body>\n\t |\n</body>\n</html>",
+            "!": "<!doctype html>\n<html lang='${en}'>\n<head>\n\t<meta charset='UTF-8'>\n\t<title>${title}</title>\n</head>\n<body>\n\t|\n</body>\n</html>",
             "a": "<a href=\" |\">",
             "alink": "<a href=\"http:// |\">",
             "amail": "<a href=\"mailto: |\">",
@@ -736,7 +736,7 @@
     
     this._getUserSnippet = (lang, snippet) => {
         var part = ko.abbrev.findAbbrevSnippet("xemmet_" + snippet, null, lang);
-        if (part !== null) return {snippet: true, name: "xemmet_" + snippet, data: part, user: true};
+        if (part !== null) return {snippet: true, name: "xemmet_" + snippet, data: part, user: true, length: snippet.length};
         return {snippet: false};
     };
     
@@ -760,9 +760,8 @@
         
         if (usnippet.snippet !== false) return usnippet;
         _snippet = this._getBuilinSnippetRecursive(language, snippet);
-        console.log(_snippet);
         if (_snippet) {
-            return {snippet: true, name: snippet, data: _snippet, user: false};
+            return {snippet: true, name: snippet, data: _snippet, user: false, length: snippet.length};
         }
         return {snippet: false};
     };
