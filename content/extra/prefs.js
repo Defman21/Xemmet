@@ -97,27 +97,38 @@
                     )
                 );
                 sibling.after(options.toString());
+                
+                var xemmet = require('xemmet/xemmet');
+                
+                var recursive_search   = require('ko/ui/checkbox')
+                                         .create("Search for built-in snippets recursively");
                 var important_snippets = require('ko/ui/checkbox')
                                          .create("Prioritize toolbox snippets over Xemmet snippets");
-                important_snippets.checked(require('xemmet/xemmet').prefs.getBool("xemmet_prioritize_snippets", true));
+                var strict_mode        = require('ko/ui/checkbox')
+                                         .create("Xemmet only works for HTML and CSS based languages");
+                var wrap_strict_mode   = require('ko/ui/checkbox')
+                                         .create("Wrap selection only works for HTML based languages");
+                var xemmet_enabled     = require('ko/ui/checkbox')
+                                         .create("Enable Xemmet");
                 
-                var strict_mode = require('ko/ui/checkbox')
-                                  .create("Xemmet only works for HTML and CSS based languages");
-                strict_mode.checked(require('xemmet/xemmet').prefs.getBool("xemmet_strict_mode", true));
-                
-                var wrap_strict_mode = require('ko/ui/checkbox')
-                                       .create("Wrap selection only works for HTML based languages");
-                wrap_strict_mode.checked(require('xemmet/xemmet').prefs.getBool("xemmet_wrap_strict_mode", true));
-                
-                var xemmet_enabled = require('ko/ui/checkbox')
-                                     .create("Enable Xemmet");
-                xemmet_enabled.checked(require('xemmet/xemmet').prefs.getBool("xemmet_enabled", true));
+                var prefs = [
+                    ["xemmet_recursive_search", false],
+                    ["xemmet_prioritize_snippets", true],
+                    ["xemmet_strict_mode", true],
+                    ["xemmet_wrap_strict_mode", true],
+                    ["xemmet_enabled", true]
+                ];
                 
                 var target = $("#xemmet-main-vbox", frameWindow.document);
-                target.prepend(wrap_strict_mode.$element);
-                target.prepend(strict_mode.$element);
-                target.prepend(important_snippets.$element);
-                target.prepend(xemmet_enabled.$element);
+                
+                [recursive_search, important_snippets, strict_mode,
+                 wrap_strict_mode, xemmet_enabled].forEach((e, i) => {
+                    e.checked(xemmet.prefs.getBool(prefs[i][0], prefs[i][1]));
+                    e.$element.attr('id', prefs[i][0]);
+                    e.$element.attr('pref', true);
+                    e.$element.attr('preftype', 'boolean');
+                    target.prepend(e.$element);
+                });
                 
                 log.debug("Created an injection: " + JSON.stringify(o));
             }
