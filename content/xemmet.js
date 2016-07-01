@@ -197,6 +197,7 @@
     
     this._expand = (string, lang, no_beautify) =>
     {
+        log.debug(`_expand < ${JSON.stringify(arguments)}`);
         var expand;
         try
         {
@@ -216,6 +217,11 @@
         }
     };
     
+    this._extractAbbr = (string) =>
+    {
+        return emmet.utils.action.extractAbbreviation(string);
+    };
+    
     this._isAbbr = (expandable, lang) =>
     {
         log.debug("_isAbbr < " + JSON.stringify(arguments));
@@ -231,7 +237,7 @@
             var object = this._getSnippet(lang, expandable);
             if (object.snippet === false)
             {
-                expand = emmet.expandAbbreviation(expandable, lang);
+                expand = this._extractAbbr(expandable);
             } else
             {
                 log.debug(`_isAbbr: expandable is a snippet, ignore..`);
@@ -256,11 +262,10 @@
                 };
             }
             log.debug(`_isAbbr: expand = ${expand}; object = ${JSON.stringify(object)}`);
-            if (lang == "css") expandable = expand;
             return {
                 success: true,
                 abbrev: false,
-                data: expandable
+                data: expand
             };
         } catch (e)
         {
@@ -281,7 +286,11 @@
     this._wrapSelection = (editor) =>
     {
         var lang = "html";
-        var wrap_with = editor.getLine().replace(/\t|\s{2,}/gm, "");
+        var wrap_with = editor
+                        .getLine()
+                        .substring(0, editor.getCursorPosition().ch)
+                        .replace(/\t|\s{2,}/gm, "");
+        wrap_with = this._extractAbbr(wrap_with);
         
         var posStart = editor.getCursorPosition();
         posStart.ch -= wrap_with.length;
@@ -409,7 +418,8 @@
                 var toExpand, isSelection;
                 if (editor.getSelection().length === 0)
                 {
-                    toExpand = editor.getLine().replace(/\t|\s{2,}/gm, "");
+                    var line = editor.getLine().substring(0, editor.getCursorPosition().ch);
+                    toExpand = line.replace(/\t|\s{2,}/gm, "");
                     isSelection = false;
                 } else if (!koDoc.hasTabstopInsertionTable)
                 {
@@ -422,6 +432,8 @@
                 log.debug(JSON.stringify(abbreviation));
                 if (abbreviation.success)
                 {
+                    log.debug("Listener: inserting abbreviation");
+                    editor.scimoz().beginUndoAction();
                     var toInsert, expand;
                     e.preventDefault();
                     if (!abbreviation.abbrev)
@@ -430,10 +442,12 @@
                         expand = this._expand(toInsert, lang);
                     }
                     
+                    log.debug(`> ${expand}`);
+                    
                     if (!isSelection)
                     {
                         var posStart = editor.getCursorPosition();
-                        posStart.ch -= toExpand.length;
+                        posStart.ch -= abbreviation.data.length;
                         var posEnd = editor.getCursorPosition();
                         
                         editor.setSelection(
@@ -453,6 +467,7 @@
                     
                     ko.abbrev.insertAbbrevSnippet(tempSnippet,
                                                   require('ko/views').current().get());
+                    editor.scimoz().endUndoAction();
                 } else {
                     return this._finalize();
                 }
