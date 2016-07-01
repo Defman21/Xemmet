@@ -11,9 +11,10 @@
                "markdown", "php"],
         css: ["css", "scss", "less"]
     };
-    const beautify_config = {
+    var beautify_config = {
         indent_size: 1,
-        indent_char: "\t"
+        indent_char: "\t",
+        unformatted: []
     };
     
     var sublangs = {html: [], css: []};
@@ -195,6 +196,16 @@
         return snips.get(language, text);
     };
     
+    this._beautify = (str) =>
+    {
+        var editor = require('ko/editor');
+        if (!editor.scimoz().useTabs) {
+            beautify_config.indent_size = require('ko/editor').scimoz().indent;
+            beautify_config.indent_char = " ";
+        }
+        return beautify.html(str, beautify_config);
+    };
+    
     this._expand = (string, lang, no_beautify) =>
     {
         log.debug(`_expand < ${JSON.stringify(arguments)}`);
@@ -208,7 +219,7 @@
             }
             if (lang == "html")
             {
-                expand = beautify.html(expand, beautify_config);
+                expand = this._beautify(expand);
             }
             return expand;
         } catch (e)
@@ -316,7 +327,7 @@
             expand = expand.replace("[[replace]]", selection);
             try
             {
-                expand = beautify.html(expand, beautify_config);
+                expand = this._beautify(expand);
             } catch (e)
             {
                 require('notify/notify').send("Xemmet: Unable to beautify the result!", {
