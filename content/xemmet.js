@@ -375,7 +375,7 @@
         }
         if (e.keyCode === 9)
         { // tab key
-            if (e.shiftKey || koDoc.hasTabstopInsertionTable)
+            if (e.shiftKey || koDoc.getTabstopInsertionTable({}).length > 0)
             {
                 return true; // Komodo/KomodoEdit/issues/{1774,1777}
             }
