@@ -293,9 +293,8 @@
         return true;
     };
     
-    this._wrapSelection = (editor) =>
+    this._wrapSelection = (editor, lang) =>
     {
-        var lang = "html";
         var wrap_with = editor
                         .getLine()
                         .substring(0, editor.getCursorPosition().ch)
@@ -388,37 +387,40 @@
             if (e.ctrlKey && !inWrapMode)
             {
                 log.debug("Listener: processing Ctrl+tab press...");
-                if (editor.getSelection().trim().length > 0)
+                if (this.prefs.getBool("xemmet_wrap_strict_mode", true) &&
+                    lang != "html")
                 {
-                    if (this.prefs.getBool("xemmet_wrap_strict_mode", true) &&
-                        lang != "html")
-                    {
-                        require('notify/notify').send("Xemmet: Wrap Selection works only in HTML", {
-                            priority: "info",
-                            category: "xemmet"
-                        });
-                        e.preventDefault();
-                        return true;
-                    }
-                    e.preventDefault();
-                    
-                    inWrapMode = true;
-                    selection = editor.getSelection();
-                    
-                    require('notify/notify').send("Xemmet: Your selection was saved, type your abbreviation", {
+                    require('notify/notify').send("Xemmet: Wrap Selection works only in HTML", {
                         priority: "info",
                         category: "xemmet"
                     });
-                    log.debug("Selection: " + selection);
-                } else
-                {
-                    log.debug("Listener: no selection found or xemmet_wrap_strict_mode is enabled");
+                    e.preventDefault();
                     return true;
                 }
+                e.preventDefault();
+                
+                inWrapMode = true;
+                selection = editor.getSelection();
+                var message = "Selection";
+                if (selection.length === 0) {
+                    selection = editor
+                                .getLine()
+                                .replace(/\t|\s{2,}/gm, "");
+                    message = "Current line";
+                    var pos = editor.getCursorPosition();
+                    pos.ch -= selection.length;
+                    editor.setSelection(pos, editor.getCursorPosition());
+                }
+                
+                require('notify/notify').send(`Xemmet: ${message} has been saved, type your abbreviation`, {
+                    priority: "info",
+                    category: "xemmet"
+                });
+                log.debug("Selection: " + selection);
             } else if (inWrapMode)
             {
                 inWrapMode = false;
-                if(this._wrapSelection(editor, lang))
+                if (this._wrapSelection(editor, lang))
                 {
                     e.preventDefault();
                 }
