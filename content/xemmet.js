@@ -356,9 +356,11 @@
     
     this.onKeyDownListener = (e) =>
     {
+        var _lang;
         var editor = require('ko/editor');
         var views = require('ko/views');
-        var _lang = views.current().get('language').toLowerCase();
+        if ((_lang = views.current().get('language')) === false) return true;
+        _lang = _lang.toLowerCase();
         var koDoc = views.current().get('koDoc');
         var lang = this._getLang(_lang);
         
