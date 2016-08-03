@@ -11,6 +11,11 @@
                "markdown", "php"],
         css: ["css", "scss", "less"]
     };
+    
+    const ignoreExpand = {
+        css: [/^\$/]
+    };
+    
     var beautify_config = {
         indent_size: 1,
         indent_char: "\t",
@@ -432,6 +437,9 @@
                 var toExpand, isSelection, line;
                 line = editor.getLine().substring(0, editor.getCursorPosition().ch);
                 toExpand = line.replace(/\t|\s{2,}/gm, "");
+                for (let regex of ignoreExpand[lang]) {
+                    if (regex.test(toExpand)) return this._finalize();
+                }
                 isSelection = false;
                 
                 log.debug(`Listener: string before caret: ${toExpand}`);
