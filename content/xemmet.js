@@ -437,8 +437,10 @@
                 var toExpand, isSelection, line;
                 line = editor.getLine().substring(0, editor.getCursorPosition().ch);
                 toExpand = line.replace(/\t|\s{2,}/gm, "");
-                for (let regex of ignoreExpand[lang]) {
-                    if (regex.test(toExpand)) return this._finalize();
+                if (typeof ignoreExpand[lang] !== 'undefined') {
+                    for (let regex of ignoreExpand[lang]) {
+                        if (regex.test(toExpand)) return this._finalize();
+                    }
                 }
                 isSelection = false;
                 
