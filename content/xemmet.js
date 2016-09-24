@@ -7,8 +7,8 @@
     const logLevel = require('ko/logging').LOG_DEBUG;
     const baselangs = {
         html: ["html", "html5", "rhtml",
-               "erb", "html.erb", "html.md",
-               "markdown", "php"],
+               "erb", "markdown", "php",
+               "komodo_snippet"],
         css: ["css", "scss", "less"]
     };
     
@@ -365,7 +365,7 @@
         var editor = require('ko/editor');
         var views = require('ko/views');
         if ((_lang = views.current().get('language')) === false) return true;
-        _lang = _lang.toLowerCase();
+        _lang = _lang.toLowerCase().replace(" ", "_");
         var koDoc = views.current().get('koDoc');
         var lang = this._getLang(_lang);
         
