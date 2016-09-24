@@ -112,7 +112,7 @@
                                          .create("Enable Xemmet");
                 
                 var prefs = [
-                    ["xemmet_recursive_search", false],
+                    ["xemmet_recursive_search", true],
                     ["xemmet_prioritize_snippets", true],
                     ["xemmet_strict_mode", true],
                     ["xemmet_wrap_strict_mode", true],
