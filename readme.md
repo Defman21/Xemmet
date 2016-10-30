@@ -39,8 +39,4 @@ To leave this mode, press Esc.
 
 ## Custom snippets
 
-To add a new snippet, first create folders "html" and "css" in
-`Komodo Toolbox- Abbreviations`. Then create a snippet inside one of these
-folders. The name of your snippet should starts with `xemmet_`.
-
-See Komodo Documentation for more information about Snippets.
+See [Emmet docs](http://docs.emmet.io/customization/snippets/).
