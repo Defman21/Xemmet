@@ -5,6 +5,8 @@
     const snips = require('./extra/snippets');
     const log = require('ko/logging').getLogger('xemmet');
     const logLevel = require('ko/logging').LOG_DEBUG;
+    const {Cc, Ci} = require("chrome");
+    
     const baselangs = {
         html: ["html", "html5", "rhtml",
                "erb", "markdown", "php",
@@ -30,13 +32,6 @@
     
     this.debug = {};
     this.prefs = {};
-    
-    this.getProperty = (property) => this[property];
-    
-    this.getEmmet = () => emmet;
-    this.getLogger = () => log;
-    this.getSnippets = () => snips;
-    this.getSubLanguages = () => sublangs;
     
     (function() {
         var p = require('ko/prefs');
@@ -68,7 +63,41 @@
         sublangs.css = custom_css_langs;
     };
     
-    this.load = (silent) =>
+    this._loadSystemSnippets = (data) =>
+    {
+        if (data) {
+            try {
+                emmet.loadSystemSnippets(data);
+                log.debug("System snippets loaded");
+            } catch (e) {
+                log.error(e);
+                return;
+            }
+        }
+    };
+    
+    this._loadUserSnippets = () =>
+    {
+        var file = require("ko/file");
+        var dirsSvc = Cc['@activestate.com/koDirs;1'].getService(Ci.koIDirs);
+        var snippetsPath = file.join(dirsSvc.userDataDir, 'snippets.json');
+        
+        if (file.exists(snippetsPath)) {
+            try {
+                emmet.loadSnippets(JSON.parse(file.read(snippetsPath)));
+                log.debug("User Snippets loaded");
+            } catch (e) {
+                require('notify/notify').send(`Xemmet: unable to load user snippets`, {
+                    priority: "error",
+                    category: "xemmet"
+                });
+                log.error(e);
+                return;
+            }
+        }
+    };
+    
+    this.load = () =>
     {
         if (!this.prefs.getBool("xemmet_enabled", true)) return;
         try
@@ -91,19 +120,18 @@
         }
         this._loadInjector();
         require('notify/categories').register('xemmet', {label: "Xemmet"});
-        snips.load();
         this._upgradeLanguages();
-        if (typeof(silent) != "undefined" && silent) return;
+        this._loadSystemSnippets(snips.snippets());
+        this._loadUserSnippets();
         log.info("Xemmet loaded");
     };
     
-    this.unload = (silent) =>
+    this.unload = () =>
     {
         window.removeEventListener('keydown', this.onKeyDownListener, true);
         window.removeEventListener('editor_view_opened', this.onViewOpened, true);
         loaded = false;
         snips.unload();
-        if (typeof(silent) != "undefined" && silent) return;
         log.info("Xemmet unloaded");
     };
     
@@ -145,7 +173,7 @@
         return prepared;
     };
     
-    this._prepare = (snippet, lang, custom) =>
+    this._prepare = (snippet, custom) =>
     {
         log.debug("_prepare < " + JSON.stringify(arguments));
         var i = 0;
@@ -182,10 +210,15 @@
         return prepared;
     };
     
-    this._getLang = (language) =>
+    this._getBaseLang = (language) =>
     {
         if (sublangs.html.indexOf(language) > -1) return "html";
         if (sublangs.css.indexOf(language) > -1) return "css";
+        return language;
+    };
+    
+    this._getLang = (language) =>
+    {
         return language;
     };
     
@@ -194,11 +227,6 @@
         if (sublangs.html.indexOf(lang) > -1 ||
             sublangs.css.indexOf(lang) > -1) return true;
         return false;
-    };
-    
-    this._getSnippet = (language, text) =>
-    {
-        return snips.get(language, text);
     };
     
     this._beautify = (str) =>
@@ -222,7 +250,7 @@
             {
                 return expand;    
             }
-            if (lang == "html")
+            if (this._getBaseLang(lang) == "html")
             {
                 expand = this._beautify(expand);
             }
@@ -238,35 +266,12 @@
         return emmet.utils.action.extractAbbreviation(string);
     };
     
-    this._isAbbr = (expandable, lang) =>
+    this._isAbbr = (expandable) =>
     {
         log.debug("_isAbbr < " + JSON.stringify(arguments));
-        if (this.prefs.getBool("xemmet_prioritize_snippets", false) === true &&
-            ko.abbrev._checkPossibleAbbreviation(expandable))
-        {
-            log.info(`_isAbbr: there's a snippet for ${expandable}, canceling Xemmet handle..`);
-            return [false, ""];
-        }
         try
         {
             var expand = this._extractAbbr(expandable);
-            var object = this._getSnippet(lang, expand);
-            if (object.snippet)
-            {
-                log.debug(`_isAbbr: expandable is a snippet, ignore..`);
-                require('notify/notify')
-                .send(`Xemmet: snippet "${object.name}" inserted`,
-                      {priority: "info",
-                      category: "xemmet"
-                });
-                log.debug(JSON.stringify(object));
-                return {
-                    success: true,
-                    abbrev: object.user,
-                    data: object.data,
-                    length: object.length
-                };
-            }
             
             if (expand.trim().length === 0)
             {
@@ -275,10 +280,9 @@
                     success: false
                 };
             }
-            log.debug(`_isAbbr: expand = ${expand}; object = ${JSON.stringify(object)}`);
+            log.debug(`_isAbbr: expand = ${expand}`);
             return {
                 success: true,
-                abbrev: false,
                 data: expand,
                 length: expand.length
             };
@@ -302,31 +306,22 @@
     {
         var wrap_with = editor
                         .getLine()
-                        .substring(0, editor.getCursorPosition().ch)
-                        .replace(/\t|\s{2,}/gm, "");
+                        .substring(0, editor.getCursorPosition().ch);
         wrap_with = this._extractAbbr(wrap_with);
         
         var posStart = editor.getCursorPosition();
         posStart.ch -= wrap_with.length;
         var posEnd = editor.getCursorPosition();
         
-        if (wrap_with.indexOf("{}") == -1)
-        {
-            wrap_with += "{}"; // add placeholder
-        }
-        
         editor.setSelection(
             posStart,
             posEnd
         );
         
-        var abbreviation = this._isAbbr(wrap_with, lang);
-        if (abbreviation.success && !abbreviation.snippet)
+        var abbreviation = this._isAbbr(wrap_with);
+        if (abbreviation.success)
         {
-            var insert = this._prepare(abbreviation.data,
-                                       lang,
-                                       "{[[replace]]}");
-            var expand = this._expand(insert, lang, true);
+            var expand = this._prepare(this._expand(abbreviation.data, lang, true), "[[replace]]");
             log.debug("_wrapSelection: to insert: " + expand);
             expand = expand.replace("[[replace]]", selection);
             try
@@ -357,6 +352,7 @@
     this.onViewOpened = () =>
     {
         this._upgradeLanguages();
+        this._loadUserSnippets();
     };
     
     this.onKeyDownListener = (e) =>
@@ -379,23 +375,26 @@
             selection = "";
             return true;
         }
+        
         if (e.keyCode === 9)
         { // tab key
             if (e.shiftKey || koDoc.getTabstopInsertionTable({}).length > 0)
             {
                 return true; // Komodo/KomodoEdit/issues/{1774,1777}
             }
+            
             if (this.prefs.getBool("xemmet_strict_mode", true) &&
                 !this._isEnabledLang(_lang))
             {
                 log.debug("Strict mode enabled, Xemmet is ignoring current language");
                 return true;
             }
+            
             if (e.ctrlKey && !inWrapMode)
             {
                 log.debug("Listener: processing Ctrl+tab press...");
                 if (this.prefs.getBool("xemmet_wrap_strict_mode", true) &&
-                    lang != "html")
+                    this._getBaseLang(lang) != "html")
                 {
                     require('notify/notify').send("Xemmet: Wrap Selection works only in HTML", {
                         priority: "info",
@@ -404,6 +403,7 @@
                     e.preventDefault();
                     return true;
                 }
+                
                 e.preventDefault();
                 
                 inWrapMode = true;
@@ -411,8 +411,7 @@
                 var message = "Selection";
                 if (selection.length === 0) {
                     selection = editor
-                                .getLine()
-                                .replace(/\t|\s{2,}/gm, "");
+                                .getLine();
                     message = "Current line";
                     var pos = editor.getCursorPosition();
                     pos.ch -= selection.length;
@@ -431,12 +430,13 @@
                 {
                     e.preventDefault();
                 }
+                
             } else if (editor.getSelection().length === 0)
             {
                 log.debug('Listener: Processing tab press...');
                 var toExpand, isSelection, line;
                 line = editor.getLine().substring(0, editor.getCursorPosition().ch);
-                toExpand = line.replace(/\t|\s{2,}/gm, "");
+                toExpand = line;//.replace(/\t|\s{2,}/gm, "");
                 if (typeof ignoreExpand[lang] !== 'undefined') {
                     for (let regex of ignoreExpand[lang]) {
                         if (regex.test(toExpand)) return this._finalize();
@@ -447,18 +447,16 @@
                 log.debug(`Listener: string before caret: ${toExpand}`);
                 var abbreviation = this._isAbbr(toExpand, lang);
                 log.debug(JSON.stringify(abbreviation));
+                
                 if (abbreviation.success)
                 {
                     log.debug("Listener: inserting abbreviation");
                     editor.scimoz().beginUndoAction();
                     var toInsert, expand, len;
                     e.preventDefault();
-                    if (!abbreviation.abbrev)
-                    {
-                        toInsert = this._prepare(abbreviation.data, lang);
-                        expand = this._expand(toInsert, lang);
-                        expand = this._prepare(expand, lang); // emmet inserts ${} for proper css
-                    }
+                    toInsert = abbreviation.data;
+                    expand = this._expand(toInsert, lang);
+                    expand = this._prepare(expand);
                     
                     len = abbreviation.length;
                     
@@ -481,12 +479,6 @@
                         editor.replaceSelection(""); // remove abbreviation
                     }
                     
-                    if (abbreviation.abbrev) {
-                        ko.abbrev.insertAbbrevSnippet(abbreviation.data,
-                                                      require('ko/views').current().get());
-                        editor.scimoz().endUndoAction();
-                        return;
-                    }
                     var tempSnippet = this._createSnippet(expand, false);
                     
                     ko.abbrev.insertAbbrevSnippet(tempSnippet,

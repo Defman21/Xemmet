@@ -99,11 +99,6 @@
                 sibling.after(options.toString());
                 
                 var xemmet = require('xemmet/xemmet');
-                
-                var recursive_search   = require('ko/ui/checkbox')
-                                         .create("Search for built-in snippets recursively");
-                var important_snippets = require('ko/ui/checkbox')
-                                         .create("Prioritize toolbox snippets over Xemmet snippets");
                 var strict_mode        = require('ko/ui/checkbox')
                                          .create("Xemmet only works for HTML and CSS based languages");
                 var wrap_strict_mode   = require('ko/ui/checkbox')
@@ -112,8 +107,6 @@
                                          .create("Enable Xemmet");
                 
                 var prefs = [
-                    ["xemmet_recursive_search", true],
-                    ["xemmet_prioritize_snippets", true],
                     ["xemmet_strict_mode", true],
                     ["xemmet_wrap_strict_mode", true],
                     ["xemmet_enabled", true]
@@ -121,8 +114,7 @@
                 
                 var target = $("#xemmet-main-vbox", frameWindow.document);
                 
-                [recursive_search, important_snippets, strict_mode,
-                 wrap_strict_mode, xemmet_enabled].forEach((e, i) => {
+                [strict_mode, wrap_strict_mode, xemmet_enabled].forEach((e, i) => {
                     e.checked(xemmet.prefs.getBool(prefs[i][0], prefs[i][1]));
                     e.$element.attr('id', prefs[i][0]);
                     e.$element.attr('pref', true);
