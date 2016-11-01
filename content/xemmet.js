@@ -24,6 +24,8 @@
         unformatted: []
     };
     
+    var notified = false;
+    
     var sublangs = {html: [], css: []};
     
     var loaded = false;
@@ -87,11 +89,14 @@
                 emmet.loadSnippets(JSON.parse(file.read(snippetsPath)));
                 log.debug("User Snippets loaded");
             } catch (e) {
-                require('notify/notify').send(`Xemmet: unable to load user snippets`, {
-                    priority: "error",
-                    category: "xemmet"
-                });
-                log.error(e);
+                if (!notified) {
+                    require('notify/notify').send(`Xemmet: unable to load user snippets`, {
+                        priority: "error",
+                        category: "xemmet"
+                    });
+                    notified = true;
+                }
+                log.warn(e);
                 return;
             }
         }
