@@ -301,6 +301,10 @@
         }
     };
     
+    this._strip = (html) => {
+        return html.replace(/<(?:.|\n)*?>/gm, '');
+    };
+    
     this._finalize = () =>
     {
         log.info("Current string is not a valid Emmet abbreviation, pass it to Komodo handlers");
@@ -311,17 +315,17 @@
     {
         var wrap_with = editor
                         .getLine()
+                        .replace(/\t/gm, " ".repeat(editor.scimoz().tabWidth)) // https://github.com/Komodo/KomodoEdit/issues/2123
                         .substring(0, editor.getCursorPosition().ch);
-        wrap_with = this._extractAbbr(wrap_with);
-        
+        wrap_with = this._extractAbbr(this._strip(wrap_with));
         var posStart = editor.getCursorPosition();
-        posStart.ch -= wrap_with.length;
+        posStart.absolute -= wrap_with.length;
         var posEnd = editor.getCursorPosition();
         
-        editor.setSelection(
-            posStart,
-            posEnd
-        );
+        log.debug(JSON.stringify(posStart));
+        log.debug(JSON.stringify(posEnd));
+        
+        editor.scimoz().setSel(posStart.absolute, posEnd.absolute);
         
         var abbreviation = this._isAbbr(wrap_with);
         if (abbreviation.success)
@@ -340,7 +344,6 @@
                 });
             }
             var snippet = this._createSnippet(expand, false);
-            editor.replaceSelection("");
             ko.abbrev.insertAbbrevSnippet(snippet,
                                           require('ko/views').current().get());
         } else
@@ -419,8 +422,8 @@
                                 .getLine();
                     message = "Current line";
                     var pos = editor.getCursorPosition();
-                    pos.ch -= selection.length;
-                    editor.setSelection(pos, editor.getCursorPosition());
+                    pos.absolute -= selection.length;
+                    editor.scimoz().setSel(pos.absolute, editor.getCursorPosition().absolute);
                 }
                 
                 require('notify/notify').send(`Xemmet: ${message} has been saved, type your abbreviation`, {
@@ -428,6 +431,7 @@
                     category: "xemmet"
                 });
                 log.debug("Selection: " + selection);
+                editor.replaceSelection("");
             } else if (inWrapMode)
             {
                 inWrapMode = false;
@@ -440,8 +444,11 @@
             {
                 log.debug('Listener: Processing tab press...');
                 var toExpand, isSelection, line;
-                line = editor.getLine().substring(0, editor.getCursorPosition().ch);
-                toExpand = line;//.replace(/\t|\s{2,}/gm, "");
+                line = editor
+                        .getLine()
+                        .replace(/\t/gm, " ".repeat(editor.scimoz().tabWidth)) // https://github.com/Komodo/KomodoEdit/issues/2123
+                        .substring(0, editor.getCursorPosition().ch);
+                toExpand = this._strip(line);
                 if (typeof ignoreExpand[lang] !== 'undefined') {
                     for (let regex of ignoreExpand[lang]) {
                         if (regex.test(toExpand)) return this._finalize();
@@ -465,23 +472,18 @@
                     
                     len = abbreviation.length;
                     
-                    log.debug(`> ${expand}`);
+                    log.debug(`> ${expand}; ${len}`);
                     
                     if (!isSelection)
                     {
                         var posStart = editor.getCursorPosition();
-                        posStart.ch -= len;
+                        posStart.absolute -= len;
                         var posEnd = editor.getCursorPosition();
                         
                         log.debug(JSON.stringify(posStart));
                         log.debug(JSON.stringify(posEnd));
                         
-                        editor.setSelection(
-                            posStart,
-                            posEnd
-                        );
-                        
-                        editor.replaceSelection(""); // remove abbreviation
+                        editor.scimoz().setSel(posStart.absolute, posEnd.absolute);
                     }
                     
                     var tempSnippet = this._createSnippet(expand, false);
