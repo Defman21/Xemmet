@@ -101,6 +101,8 @@
                 var xemmet = require('xemmet/xemmet');
                 var strict_mode        = require('ko/ui/checkbox')
                                          .create("Xemmet only works for HTML and CSS based languages");
+                var wrap_line_mode     = require('ko/ui/checkbox')
+                                         .create("Wrap selection uses current line if there's no selection");
                 var wrap_strict_mode   = require('ko/ui/checkbox')
                                          .create("Wrap selection only works for HTML based languages");
                 var xemmet_enabled     = require('ko/ui/checkbox')
@@ -109,16 +111,19 @@
                 var prefs = [
                     ["xemmet_strict_mode", true],
                     ["xemmet_wrap_strict_mode", true],
-                    ["xemmet_enabled", true]
+                    ["xemmet_enabled", true],
+                    ["xemmet_enable_line_wrap_selection", true]
                 ];
                 
                 var target = $("#xemmet-main-vbox", frameWindow.document);
                 
-                [strict_mode, wrap_strict_mode, xemmet_enabled].forEach((e, i) => {
+                [strict_mode, wrap_strict_mode, xemmet_enabled,
+                 wrap_line_mode].forEach((e, i) => {
                     e.checked(xemmet.prefs.getBool(prefs[i][0], prefs[i][1]));
                     e.$element.attr('id', prefs[i][0]);
                     e.$element.attr('pref', true);
                     e.$element.attr('preftype', 'boolean');
+                    e.$element.attr('checked', xemmet.prefs.getBool(prefs[i][0], prefs[i][1]));
                     target.prepend(e.$element);
                 });
                 

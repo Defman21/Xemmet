@@ -4,7 +4,7 @@
     const beautify = require('./sdk/beautify/beautify');
     const snips = require('./extra/snippets');
     const log = require('ko/logging').getLogger('xemmet');
-    const logLevel = require('ko/logging').LOG_DEBUG;
+    const logLevel = require('ko/logging').LOG_INFO;
     const {Cc, Ci} = require("chrome");
     
     const baselangs = {
@@ -102,6 +102,10 @@
         }
     };
     
+    this.__debug__ = () => {
+        log.setLevel(require('ko/logging').LOG_DEBUG);
+    };
+    
     this.load = () =>
     {
         if (!this.prefs.getBool("xemmet_enabled", true)) return;
@@ -180,7 +184,7 @@
     
     this._prepare = (snippet, custom) =>
     {
-        log.debug("_prepare < " + JSON.stringify(arguments));
+        log.debug(`@_prepare args = ${JSON.stringify(arguments)}`);
         var i = 0;
         var cr = false;
         if (typeof(custom) != "undefined")
@@ -211,7 +215,7 @@
                                     i++;
                                     return `{[[%tabstop${i}:]]}`;
                                  });
-        log.debug(`_prepare > ${prepared}`);
+        log.debug(`@_prepare return = ${prepared}`);
         return prepared;
     };
     
@@ -246,22 +250,25 @@
     
     this._expand = (string, lang, no_beautify) =>
     {
-        log.debug(`_expand < ${JSON.stringify(arguments)}`);
+        log.debug(`@_expand args = ${JSON.stringify(arguments)}`);
         var expand;
         try
         {
             expand = emmet.expandAbbreviation(string, lang);
             if (typeof(no_beautify) != "undefined" && no_beautify)
             {
-                return expand;    
+                log.debug(`@_expand return = ${expand}`);
+                return expand;
             }
             if (this._getBaseLang(lang) == "html")
             {
                 expand = this._beautify(expand);
             }
+            log.debug(`@_expand return = ${expand}`);
             return expand;
         } catch (e)
         {
+            log.debug(`@_expand return = ${string}`);
             return string;
         }
     };
@@ -273,27 +280,27 @@
     
     this._isAbbr = (expandable) =>
     {
-        log.debug("_isAbbr < " + JSON.stringify(arguments));
+        log.debug(`@_isAbbr: args = ${JSON.stringify(arguments)}`);
         try
         {
-            var expand = this._extractAbbr(expandable);
+            var extracted = this._extractAbbr(expandable);
             
-            if (expand.trim().length === 0)
+            if (extracted.trim().length === 0)
             {
-                log.debug(`_isAbbr: Emmet abbreviation is empty (invalid)`);
+                log.debug(`@_isAbbr: Emmet abbreviation is empty (invalid)`);
                 return {
                     success: false
                 };
             }
-            log.debug(`_isAbbr: expand = ${expand}`);
+            log.debug(`@_isAbbr: extracted abbr = ${extracted}; success!`);
             return {
                 success: true,
-                data: expand,
-                length: expand.length
+                data: extracted,
+                length: extracted.length
             };
         } catch (e)
         {
-            log.error(`_isAbbr: Invalid abbreviation: ${expand}`);
+            log.error(`@_isAbbr: Invalid abbreviation: ${extracted}`);
             log.exception(e);
             return {
                 success: false
@@ -317,13 +324,12 @@
                         .getLine()
                         .replace(/\t/gm, " ".repeat(editor.scimoz().tabWidth)) // https://github.com/Komodo/KomodoEdit/issues/2123
                         .substring(0, editor.getCursorPosition().ch);
+        log.debug(`@_wrapSelection: wrap_with = ${wrap_with};`);
         wrap_with = this._extractAbbr(this._strip(wrap_with));
+        log.debug(`@_wrapSelection: wrap_with = ${wrap_with}; _extractAbbr!`);
         var posStart = editor.getCursorPosition();
         posStart.absolute -= wrap_with.length;
         var posEnd = editor.getCursorPosition();
-        
-        log.debug(JSON.stringify(posStart));
-        log.debug(JSON.stringify(posEnd));
         
         editor.scimoz().setSel(posStart.absolute, posEnd.absolute);
         
@@ -331,8 +337,8 @@
         if (abbreviation.success)
         {
             var expand = this._prepare(this._expand(abbreviation.data, lang, true), "[[replace]]");
-            log.debug("_wrapSelection: to insert: " + expand);
             expand = expand.replace("[[replace]]", selection);
+            log.debug(`@_wrapSelection: to insert: ${expand}`);
             try
             {
                 expand = this._beautify(expand);
@@ -394,13 +400,13 @@
             if (this.prefs.getBool("xemmet_strict_mode", true) &&
                 !this._isEnabledLang(_lang))
             {
-                log.debug("Strict mode enabled, Xemmet is ignoring current language");
+                log.debug(`Prefs[global]: xemmet_strict_mode = true, Xemmet ignores ${_lang}`);
                 return true;
             }
             
             if (e.ctrlKey && !inWrapMode)
             {
-                log.debug("Listener: processing Ctrl+tab press...");
+                log.debug('Listener[global]: CTRL+TAB pressed');
                 if (this.prefs.getBool("xemmet_wrap_strict_mode", true) &&
                     this._getBaseLang(lang) != "html")
                 {
@@ -412,25 +418,29 @@
                     return true;
                 }
                 
-                e.preventDefault();
-                
-                inWrapMode = true;
                 selection = editor.getSelection();
                 var message = "Selection";
-                if (selection.length === 0) {
+                
+                if (selection.length === 0 && this.prefs.getBool("xemmet_enable_line_wrap_selection", true)) {
                     selection = editor
                                 .getLine();
                     message = "Current line";
+                    editor.goLineEnd();
                     var pos = editor.getCursorPosition();
                     pos.absolute -= selection.length;
                     editor.scimoz().setSel(pos.absolute, editor.getCursorPosition().absolute);
+                } else if (selection.length === 0) {
+                    log.debug(`Prefs[selection-grab]: xemmet_enable_line_wrap_selection = false, selection = null; return`);
+                    return true;
                 }
                 
+                e.preventDefault();
+                inWrapMode = true;
                 require('notify/notify').send(`Xemmet: ${message} has been saved, type your abbreviation`, {
                     priority: "info",
                     category: "xemmet"
                 });
-                log.debug("Selection: " + selection);
+                log.debug(`Listener[selection-grab]: Selection: ${selection}`);
                 editor.replaceSelection("");
             } else if (inWrapMode)
             {
@@ -442,12 +452,14 @@
                 
             } else if (editor.getSelection().length === 0)
             {
-                log.debug('Listener: Processing tab press...');
+                log.debug('Listener[global]: TAB pressed');
                 var toExpand, isSelection, line;
                 line = editor
                         .getLine()
                         .replace(/\t/gm, " ".repeat(editor.scimoz().tabWidth)) // https://github.com/Komodo/KomodoEdit/issues/2123
                         .substring(0, editor.getCursorPosition().ch);
+                log.debug(`Listener[tab-expand]: raw string before caret: ${line}`);
+                
                 toExpand = this._strip(line);
                 if (typeof ignoreExpand[lang] !== 'undefined') {
                     for (let regex of ignoreExpand[lang]) {
@@ -456,13 +468,13 @@
                 }
                 isSelection = false;
                 
-                log.debug(`Listener: string before caret: ${toExpand}`);
+                log.debug(`Listener[tab-expand]: possible abbreviation before caret: ${toExpand}`);
+                
                 var abbreviation = this._isAbbr(toExpand, lang);
-                log.debug(JSON.stringify(abbreviation));
                 
                 if (abbreviation.success)
                 {
-                    log.debug("Listener: inserting abbreviation");
+                    log.debug("Listener[tab-expand; success]: inserting abbreviation");
                     editor.scimoz().beginUndoAction();
                     var toInsert, expand, len;
                     e.preventDefault();
@@ -472,17 +484,13 @@
                     
                     len = abbreviation.length;
                     
-                    log.debug(`> ${expand}; ${len}`);
+                    log.debug(`Listener[tab-expand; success]: to insert: ${expand}; abbr(${toInsert}).len = ${len}`);
                     
                     if (!isSelection)
                     {
                         var posStart = editor.getCursorPosition();
                         posStart.absolute -= len;
                         var posEnd = editor.getCursorPosition();
-                        
-                        log.debug(JSON.stringify(posStart));
-                        log.debug(JSON.stringify(posEnd));
-                        
                         editor.scimoz().setSel(posStart.absolute, posEnd.absolute);
                     }
                     
