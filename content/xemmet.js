@@ -198,7 +198,7 @@
                                         return "[[%tabstop:]]";
                                      });
         prepared = this._replace(prepared,
-                                 /(\$\{(\d+|\w+)(?:\:(.+?))?\})/gmi,
+                                 /(\$.*?\{[\t\s\n.]*?(\d+|\w+)(?:\:(.+?))?[\t\s\n.]*?\})/gmi,
                                  (_, g1, g2, g3) => {
                                     if (cr) return custom;
                                     if (isNaN(g2)) {
@@ -242,20 +242,24 @@
     {
         var editor = require('ko/editor');
         if (!editor.scimoz().useTabs) {
-            beautify_config.indent_size = require('ko/editor').scimoz().indent;
+            log.debug(`@_beautify indent = spaces`);
+            beautify_config.indent_size = editor.scimoz().indent;
             beautify_config.indent_char = " ";
+        } else {
+            log.debug(`@_beautify indent = tabs`);
         }
         return beautify.html(str, beautify_config);
     };
     
-    this._expand = (string, lang, no_beautify) =>
+    this._expand = (string, lang, no_beautify = false) =>
     {
         log.debug(`@_expand args = ${JSON.stringify(arguments)}`);
         var expand;
         try
         {
             expand = emmet.expandAbbreviation(string, lang);
-            if (typeof(no_beautify) != "undefined" && no_beautify)
+            log.debug(`@_expand expand = ${expand}`);
+            if (no_beautify)
             {
                 log.debug(`@_expand return = ${expand}`);
                 return expand;
@@ -264,11 +268,11 @@
             {
                 expand = this._beautify(expand);
             }
-            log.debug(`@_expand return = ${expand}`);
+            log.debug(`@_expand return = ${expand}; beautified!`);
             return expand;
         } catch (e)
         {
-            log.debug(`@_expand return = ${string}`);
+            log.debug(`@_expand return = ${string}; exception!`);
             return string;
         }
     };
@@ -374,9 +378,9 @@
         var _lang;
         var editor = require('ko/editor');
         var views = require('ko/views');
-        if ((_lang = views.current().get('language')) === false) return true;
-        _lang = _lang.toLowerCase().replace(" ", "_");
         var koDoc = views.current().get('koDoc');
+        if ((_lang = koDoc.subLanguage) === false) return true;
+        _lang = _lang.toLowerCase().replace(" ", "_");
         var lang = this._getLang(_lang);
         
         if (e.keyCode === 27 && inWrapMode)
