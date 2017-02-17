@@ -59,8 +59,8 @@
         
     this._upgradeLanguages = () =>
     {
-        var custom_html_langs = this.prefs.getString("xemmet_html_languages").split(" ");
-        var custom_css_langs = this.prefs.getString("xemmet_css_languages").split(" ");
+        let custom_html_langs = this.prefs.getString("xemmet_html_languages").split(" ");
+        let custom_css_langs = this.prefs.getString("xemmet_css_languages").split(" ");
         sublangs.html = custom_html_langs;
         sublangs.css = custom_css_langs;
     };
@@ -80,10 +80,10 @@
     
     this._loadUserSnippets = () =>
     {
-        var file = require("ko/file");
-        var dirsSvc = Cc['@activestate.com/koDirs;1'].getService(Ci.koIDirs);
-        var snippetsPath = file.join(dirsSvc.userDataDir, 'snippets.json');
-        
+        let file = require("ko/file");
+        let dirsSvc = Cc['@activestate.com/koDirs;1'].getService(Ci.koIDirs);
+        let snippetsPath = file.join(dirsSvc.userDataDir, 'snippets.json');
+
         if (file.exists(snippetsPath)) {
             try {
                 emmet.loadSnippets(JSON.parse(file.read(snippetsPath)));
@@ -101,7 +101,7 @@
             }
         }
     };
-    
+
     this.__debug__ = () => {
         log.setLevel(require('ko/logging').LOG_DEBUG);
     };
@@ -132,7 +132,7 @@
         this._upgradeLanguages();
         this._loadSystemSnippets(snips.snippets());
         this._loadUserSnippets();
-        log.info("Xemmet loaded");
+        log.debug("Xemmet loaded");
     };
     
     this.unload = () =>
@@ -141,9 +141,9 @@
         window.removeEventListener('editor_view_opened', this.onViewOpened, true);
         loaded = false;
         snips.unload();
-        log.info("Xemmet unloaded");
+        log.debug("Xemmet unloaded");
     };
-    
+
     this.disable = () =>
     {
         if (!loaded) return false;
@@ -171,50 +171,47 @@
             set_selection: false,
             indent_relative: !noIndent,
             value: text,
-            hasAttribute: function(name) { return (name in this); },
-            getStringAttribute: function(name) { return ('' + this[name]); }
+            hasAttribute: name => name in this,
+            getStringAttribute: name => '' + this[name]
         };
     };
     
-    this._replace = (text, search, block) =>
+    this._replace = (text, rules) =>
     {
-        var prepared = text.replace(search, block);
-        return prepared;
+        for (let rule of rules) {
+            text = text.replace(rule.regex, rule.replace);
+        }
+        return text;
     };
-    
-    this._prepare = (snippet, custom) =>
+
+    this._prepare = (snippet, replace_with = null) =>
     {
         log.debug(`@_prepare args = ${JSON.stringify(arguments)}`);
-        var i = 0;
-        var cr = false;
-        if (typeof(custom) != "undefined")
-        {
-            cr = true;
-        }
-        var prepared = this._replace(snippet,
-                                     /\|/gmi,
-                                     () => {
-                                        if (cr) return custom;
-                                        return "[[%tabstop:]]";
-                                     });
-        prepared = this._replace(prepared,
-                                 /(\$.*?\{[\t\s\n.]*?(\d+|\w+)(?:\:(.+?))?[\t\s\n.]*?\})/gmi,
-                                 (_, g1, g2, g3) => {
-                                    if (cr) return custom;
-                                    if (isNaN(g2)) {
-                                        g3 = g2;
-                                        g2 = "";
-                                    }
-                                    if (typeof(g3) == "undefined") g3 = "";
-                                    return `[[%tabstop${g2}:${g3}]]`;
-                                 });
-        prepared = this._replace(prepared,
-                                 /\{\s*\}/gmi,
-                                 () => {
-                                    if (cr) return custom;
-                                    i++;
-                                    return `{[[%tabstop${i}:]]}`;
-                                 });
+        
+        let rules = [
+            {
+                regex: /\|/gmi,
+                replace: replace_with || "[[%tabstop:]]"
+            },
+            {
+                regex: /(\$.*?\{[\t\s\n.]*?(\d+|\w+)(?:\:(.+?))?[\t\s\n.]*?\})/gmi,
+                replace: (_, g1, g2, g3) => {
+                    if (replace_with) return replace_with;
+                    if (isNaN(g2)) {
+                        g3 = g2;
+                        g2 = "";
+                    }
+                    if (typeof(g3) == "undefined") g3 = "";
+                    return `[[%tabstop${g2}:${g3}]]`;
+                }
+            },
+            {
+                regex: /\{\s*\}/gmi,
+                replace: replace_with || "{[[%tabstop:]]}"
+            }
+        ];
+
+        let prepared = this._replace(snippet, rules);
         log.debug(`@_prepare return = ${prepared}`);
         return prepared;
     };
@@ -223,11 +220,6 @@
     {
         if (sublangs.html.indexOf(language) > -1) return "html";
         if (sublangs.css.indexOf(language) > -1) return "css";
-        return language;
-    };
-    
-    this._getLang = (language) =>
-    {
         return language;
     };
     
@@ -240,7 +232,7 @@
     
     this._beautify = (str) =>
     {
-        var editor = require('ko/editor');
+        let editor = require('ko/editor');
         if (!editor.scimoz().useTabs) {
             log.debug(`@_beautify indent = spaces`);
             beautify_config.indent_size = editor.scimoz().indent;
@@ -254,7 +246,7 @@
     this._expand = (string, lang, no_beautify = false) =>
     {
         log.debug(`@_expand args = ${JSON.stringify(arguments)}`);
-        var expand;
+        let expand;
         try
         {
             expand = emmet.expandAbbreviation(string, lang);
@@ -287,7 +279,7 @@
         log.debug(`@_isAbbr: args = ${JSON.stringify(arguments)}`);
         try
         {
-            var extracted = this._extractAbbr(expandable);
+            let extracted = this._extractAbbr(expandable);
             
             if (extracted.trim().length === 0)
             {
@@ -322,24 +314,28 @@
         return true;
     };
     
+    this._createSelection = (abbr_length, editor) => {
+        let [start, end] = [editor.getCursorPosition(), editor.getCursorPosition()];
+        start.ch -= abbr_length;
+        editor.setSelection(start, end);
+        log.debug(`@_createSelection: created a selection`);
+    };
+
     this._wrapSelection = (editor, lang) =>
     {
-        var wrap_with = editor
+        let wrap_with = editor
                         .getLine()
                         .substring(0, editor.getCursorPosition().ch);
         log.debug(`@_wrapSelection: wrap_with = ${wrap_with};`);
         wrap_with = this._extractAbbr(this._strip(wrap_with));
         log.debug(`@_wrapSelection: wrap_with = ${wrap_with}; _extractAbbr!`);
-        var posStart = editor.getCursorPosition();
-        posStart.absolute -= wrap_with.length;
-        var posEnd = editor.getCursorPosition();
         
-        editor.setSelection(posStart, posEnd);
+        this._createSelection(wrap_with.length, editor);
         
-        var abbreviation = this._isAbbr(wrap_with);
+        let abbreviation = this._isAbbr(wrap_with);
         if (abbreviation.success)
         {
-            var expand = this._prepare(this._expand(abbreviation.data, lang, true), "[[replace]]");
+            let expand = this._prepare(this._expand(abbreviation.data, lang, true), "[[replace]]");
             expand = expand.replace("[[replace]]", selection);
             log.debug(`@_wrapSelection: to insert: ${expand}`);
             try
@@ -352,7 +348,7 @@
                     category: "xemmet"
                 });
             }
-            var snippet = this._createSnippet(expand, false);
+            let snippet = this._createSnippet(expand, false);
             ko.abbrev.insertAbbrevSnippet(snippet,
                                           require('ko/views').current().get());
         } else
@@ -374,13 +370,12 @@
     
     this.onKeyDownListener = (e) =>
     {
-        var _lang;
-        var editor = require('ko/editor');
-        var views = require('ko/views');
-        var koDoc = views.current().get('koDoc');
-        if ((_lang = koDoc.subLanguage) === false) return true;
-        _lang = _lang.toLowerCase().replace(" ", "_");
-        var lang = this._getLang(_lang);
+        let lang, editor, views, koDoc;
+        editor = require('ko/editor');
+        views = require('ko/views');
+        koDoc = views.current().get('koDoc');
+        if ((lang = koDoc.subLanguage) === false) return true;
+        lang = lang.toLowerCase().replace(" ", "_");
         
         if (e.keyCode === 27 && inWrapMode)
         { // esc key
@@ -401,9 +396,9 @@
             }
             
             if (this.prefs.getBool("xemmet_strict_mode", true) &&
-                !this._isEnabledLang(_lang))
+                !this._isEnabledLang(lang))
             {
-                log.debug(`Prefs[global]: xemmet_strict_mode = true, Xemmet ignores ${_lang}`);
+                log.debug(`Prefs[global]: xemmet_strict_mode = true, Xemmet ignores ${lang}`);
                 return true;
             }
             
@@ -422,16 +417,14 @@
                 }
                 
                 selection = editor.getSelection();
-                var message = "Selection";
+                let message = "Selection";
                 
                 if (selection.length === 0 && this.prefs.getBool("xemmet_enable_line_wrap_selection", true)) {
                     selection = editor
                                 .getLine();
                     message = "Current line";
                     editor.goLineEnd();
-                    var pos = editor.getCursorPosition();
-                    pos.absolute -= selection.length;
-                    editor.setSelection(pos, editor.getCursorPosition());
+                    this._createSelection(selection.length, editor);
                 } else if (selection.length === 0) {
                     log.debug(`Prefs[selection-grab]: xemmet_enable_line_wrap_selection = false, selection = null; return`);
                     return true;
@@ -456,7 +449,7 @@
             } else if (editor.getSelection().length === 0)
             {
                 log.debug('Listener[global]: TAB pressed');
-                var toExpand, isSelection, line;
+                let toExpand, isSelection, line;
                 line = editor
                         .getLine()
                         .substring(0, editor.getCursorPosition().ch);
@@ -472,13 +465,13 @@
                 
                 log.debug(`Listener[tab-expand]: possible abbreviation before caret: ${toExpand}`);
                 
-                var abbreviation = this._isAbbr(toExpand, lang);
+                let abbreviation = this._isAbbr(toExpand, lang);
                 
                 if (abbreviation.success)
                 {
                     log.debug("Listener[tab-expand; success]: inserting abbreviation");
                     editor.scimoz().beginUndoAction();
-                    var toInsert, expand, len;
+                    let toInsert, expand, len;
                     e.preventDefault();
                     toInsert = abbreviation.data;
                     expand = this._expand(toInsert, lang);
@@ -490,13 +483,10 @@
                     
                     if (!isSelection)
                     {
-                        var posStart = editor.getCursorPosition();
-                        posStart.absolute -= len;
-                        var posEnd = editor.getCursorPosition();
-                        editor.setSelection(posStart, posEnd);
+                        this._createSelection(len, editor);
                     }
                     
-                    var tempSnippet = this._createSnippet(expand, false);
+                    let tempSnippet = this._createSnippet(expand, false);
                     
                     ko.abbrev.insertAbbrevSnippet(tempSnippet,
                                                   require('ko/views').current().get());
