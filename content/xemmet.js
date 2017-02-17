@@ -326,7 +326,6 @@
     {
         var wrap_with = editor
                         .getLine()
-                        .replace(/\t/gm, " ".repeat(editor.scimoz().tabWidth)) // https://github.com/Komodo/KomodoEdit/issues/2123
                         .substring(0, editor.getCursorPosition().ch);
         log.debug(`@_wrapSelection: wrap_with = ${wrap_with};`);
         wrap_with = this._extractAbbr(this._strip(wrap_with));
@@ -335,7 +334,7 @@
         posStart.absolute -= wrap_with.length;
         var posEnd = editor.getCursorPosition();
         
-        editor.scimoz().setSel(posStart.absolute, posEnd.absolute);
+        editor.setSelection(pos, editor.getCursorPosition());
         
         var abbreviation = this._isAbbr(wrap_with);
         if (abbreviation.success)
@@ -432,7 +431,7 @@
                     editor.goLineEnd();
                     var pos = editor.getCursorPosition();
                     pos.absolute -= selection.length;
-                    editor.scimoz().setSel(pos.absolute, editor.getCursorPosition().absolute);
+                    editor.setSelection(pos, editor.getCursorPosition());
                 } else if (selection.length === 0) {
                     log.debug(`Prefs[selection-grab]: xemmet_enable_line_wrap_selection = false, selection = null; return`);
                     return true;
@@ -460,7 +459,6 @@
                 var toExpand, isSelection, line;
                 line = editor
                         .getLine()
-                        .replace(/\t/gm, " ".repeat(editor.scimoz().tabWidth)) // https://github.com/Komodo/KomodoEdit/issues/2123
                         .substring(0, editor.getCursorPosition().ch);
                 log.debug(`Listener[tab-expand]: raw string before caret: ${line}`);
                 
@@ -495,7 +493,7 @@
                         var posStart = editor.getCursorPosition();
                         posStart.absolute -= len;
                         var posEnd = editor.getCursorPosition();
-                        editor.scimoz().setSel(posStart.absolute, posEnd.absolute);
+                        editor.setSelection(pos, editor.getCursorPosition());
                     }
                     
                     var tempSnippet = this._createSnippet(expand, false);
