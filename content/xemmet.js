@@ -334,7 +334,7 @@
         posStart.absolute -= wrap_with.length;
         var posEnd = editor.getCursorPosition();
         
-        editor.setSelection(pos, editor.getCursorPosition());
+        editor.setSelection(posStart, posEnd);
         
         var abbreviation = this._isAbbr(wrap_with);
         if (abbreviation.success)
@@ -493,7 +493,7 @@
                         var posStart = editor.getCursorPosition();
                         posStart.absolute -= len;
                         var posEnd = editor.getCursorPosition();
-                        editor.setSelection(pos, editor.getCursorPosition());
+                        editor.setSelection(posStart, posEnd);
                     }
                     
                     var tempSnippet = this._createSnippet(expand, false);
