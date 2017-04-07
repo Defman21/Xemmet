@@ -1,4 +1,4 @@
-Xemmet
+Xemmet Hi!
 ======
 
 Emmet for Komodo X.
