@@ -8,7 +8,7 @@ var indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i 
   beautify = require('./sdk/beautify/beautify');
   snippets = require('./extra/snippets');
   log = require('ko/logging').getLogger('xemmet');
-  logLevel = require('ko/logging').LOG_DEBUG;
+  logLevel = require('ko/logging').LOG_INFO;
   notify = require('notify/notify');
   ({Cc, Ci} = require('chrome'));
   baseLangs = {
@@ -82,7 +82,8 @@ var indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i 
       }
     }
   };
-  this.__debug__ = () => {
+  this.__debug__ = (permanent = false) => {
+    this.prefs.setBoolean('xemmet_force_debug', permanent);
     return log.setLevel(require('ko/logging').LOG_DEBUG);
   };
   this.load = () => {
@@ -101,7 +102,11 @@ var indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i 
     }
     window.addEventListener('keydown', this.onKeyDownListener, true);
     window.addEventListener('editor_view_opened', this.onViewOpened, true);
-    log.setLevel(logLevel);
+    if (this.prefs.getBoolean('xemmet_force_debug', false)) {
+      log.setLevel(require('ko/logging').LOG_DEBUG);
+    } else {
+      log.setLevel(logLevel);
+    }
     if (!loaded) {
       loaded = true;
     }
@@ -112,13 +117,13 @@ var indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i 
     this._upgradeLanguages();
     this._loadSystemSnippets(snippets.snippets());
     this._loadUserSnippets();
-    return log.debug('Loaded');
+    return log.info('Xemmet loaded');
   };
   this.unload = () => {
     window.removeEventListener('keydown', this.onKeyDownListener, true);
     window.removeEventListener('editor_view_opened', this.onViewOpened, true);
     loaded = false;
-    return log.debug('Unloaded');
+    return log.info('Xemmet unloaded');
   };
   this.enable = () => {
     if (loaded) {

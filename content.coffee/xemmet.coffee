@@ -4,7 +4,7 @@
   beautify = require './sdk/beautify/beautify'
   snippets = require './extra/snippets'
   log      = require('ko/logging').getLogger 'xemmet'
-  logLevel = require('ko/logging').LOG_DEBUG
+  logLevel = require('ko/logging').LOG_INFO
   notify   = require 'notify/notify'
   {Cc, Ci} = require 'chrome'
   
@@ -77,7 +77,8 @@
           notified = on
           log.warn e
 
-  @__debug__ = =>
+  @__debug__ = (permanent = no) =>
+    @prefs.setBoolean 'xemmet_force_debug', permanent
     log.setLevel require('ko/logging').LOG_DEBUG
 
   @load = =>
@@ -94,7 +95,10 @@
     window.addEventListener 'keydown', @onKeyDownListener, on
     window.addEventListener 'editor_view_opened', @onViewOpened, on
 
-    log.setLevel logLevel
+    if @prefs.getBoolean 'xemmet_force_debug', no
+      log.setLevel require('ko/logging').LOG_DEBUG
+    else
+      log.setLevel logLevel
 
     loaded = on unless loaded
 
@@ -103,13 +107,13 @@
     @_upgradeLanguages()
     @_loadSystemSnippets snippets.snippets()
     @_loadUserSnippets()
-    log.debug 'Loaded'
+    log.info 'Xemmet loaded'
 
   @unload = =>
     window.removeEventListener 'keydown', @onKeyDownListener, on
     window.removeEventListener 'editor_view_opened', @onViewOpened, on
     loaded = no
-    log.debug 'Unloaded'
+    log.info 'Xemmet unloaded'
 
   @enable = =>
     return no if loaded
