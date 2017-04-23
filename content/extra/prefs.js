@@ -48,32 +48,39 @@
           id: 'xemmet_main'
         }, $.create('caption', {
           label: caption
-        })('vbox align="left"', {
-          id: 'xemmet_main_vbox'
-        }, $.create('textbox', {
-          id: 'xemmet_css_langs',
+        })('vbox', {
           flex: 1,
-          pref: 'true',
-          prefstring: 'xemmet_css_languages',
-          prefattribute: 'value',
-          placeholder: 'Additional CSS Language Names that Xemmet should run on'
-        })('textbox', {
-          id: 'xemmet_html_langs"',
-          flex: '1',
-          pref: 'true',
+          id: 'xemmet_main_vbox'
+        }, $.create('hbox', {
+          flex: 1
+        }, $.create('textbox', {
+          id: 'xemmet_html_langs',
+          flex: 1,
+          multiline: true,
+          rows: 3,
+          pref: true,
           prefstring: 'xemmet_html_languages',
           prefattribute: 'value',
           placeholder: 'Additional HTML Language Names that Xemmet should run on'
-        })));
+        })('textbox', {
+          id: 'xemmet_css_langs"',
+          flex: 1,
+          multiline: true,
+          rows: 3,
+          pref: true,
+          prefstring: 'xemmet_css_languages',
+          prefattribute: 'value',
+          placeholder: 'Additional CSS Language Names that Xemmet should run on'
+        }))));
         sibling.after(options.toString());
         xemmet = require('xemmet/xemmet');
         strictMode = require('ko/ui/checkbox').create('Xemmet only works for HTML and CSS based languages');
         wrapLineMode = require('ko/ui/checkbox').create('Wrap selection uses current line if there is no selection');
         wrapStrictMode = require('ko/ui/checkbox').create('Wrap selection only works for HTML based languages');
         xemmetEnabled = require('ko/ui/checkbox').create('Enable Xemmet');
-        prefs = [['xemmet_enable_line_wrap_selection', true], ['xemmet_wrap_strict_mode', true], ['xemmet_strict_mode', true], ['xemmet_enabled', true]];
+        prefs = [['xemmet_strict_mode', true], ['xemmet_enable_line_wrap_selection', true], ['xemmet_wrap_strict_mode', true], ['xemmet_enabled', true]];
         target = $('#xemmet_main_vbox', frameWindow.document);
-        ref1 = [wrapLineMode, wrapStrictMode, strictMode, xemmetEnabled];
+        ref1 = [strictMode, wrapLineMode, wrapStrictMode, xemmetEnabled];
         for (index = k = 0, len2 = ref1.length; k < len2; index = ++k) {
           pref = ref1[index];
           pref.checked(xemmet.prefs.getBoolean(prefs[index][0], prefs[index][1]));

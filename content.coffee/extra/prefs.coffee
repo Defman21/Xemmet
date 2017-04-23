@@ -44,22 +44,28 @@
 
         sibling = $ siblingSelector, frameWindow.document
         options = $.create 'groupbox', {id: 'xemmet_main'},
-        $.create('caption', {label: caption})('vbox align="left"', {id: 'xemmet_main_vbox'},
-          $.create('textbox', {
-            id: 'xemmet_css_langs'
-            flex: 1
-            pref: 'true'
-            prefstring: 'xemmet_css_languages'
-            prefattribute: 'value'
-            placeholder: 'Additional CSS Language Names that Xemmet should run on'
-          })('textbox', {
-            id: 'xemmet_html_langs"'
-            flex: '1'
-            pref: 'true'
-            prefstring: 'xemmet_html_languages'
-            prefattribute: 'value'
-            placeholder: 'Additional HTML Language Names that Xemmet should run on'
-          })
+        $.create('caption', {label: caption})('vbox', {flex: 1, id: 'xemmet_main_vbox'},
+          $.create('hbox', {flex: 1},
+            $.create('textbox', {
+              id: 'xemmet_html_langs'
+              flex: 1
+              multiline: on
+              rows: 3
+              pref: on
+              prefstring: 'xemmet_html_languages'
+              prefattribute: 'value'
+              placeholder: 'Additional HTML Language Names that Xemmet should run on'
+            })('textbox', {
+              id: 'xemmet_css_langs"'
+              flex: 1
+              multiline: on
+              rows: 3
+              pref: on
+              prefstring: 'xemmet_css_languages'
+              prefattribute: 'value'
+              placeholder: 'Additional CSS Language Names that Xemmet should run on'
+            })
+          )
         )
         sibling.after options.toString()
 
@@ -70,15 +76,15 @@
         xemmetEnabled = require('ko/ui/checkbox').create 'Enable Xemmet'
 
         prefs = [
+          ['xemmet_strict_mode', on]
           ['xemmet_enable_line_wrap_selection', on]
           ['xemmet_wrap_strict_mode', on]
-          ['xemmet_strict_mode', on]
           ['xemmet_enabled', on]
         ]
 
         target = $ '#xemmet_main_vbox', frameWindow.document
 
-        for pref, index in [wrapLineMode, wrapStrictMode, strictMode, xemmetEnabled]
+        for pref, index in [strictMode, wrapLineMode, wrapStrictMode, xemmetEnabled]
           pref.checked xemmet.prefs.getBoolean prefs[index][0], prefs[index][1]
           pref.$element.attr 'id', prefs[index][0]
           pref.$element.attr 'pref', on
