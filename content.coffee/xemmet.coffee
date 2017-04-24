@@ -45,6 +45,11 @@
       caption: 'Xemmet'
     log.debug 'Injected preferences'
 
+  @_notify = (message, priority = 'info') =>
+    notify.send message,
+      priority
+      category: 'xemmet'
+
   @_upgradeLanguages = =>
     customCssLangs  = @prefs.getString('xemmet_css_languages', '').split  " "
     customHtmlLangs = @prefs.getString('xemmet_html_languages', '').split " "
@@ -58,7 +63,7 @@
         emmet.loadSystemSnippets data
         log.debug 'Loaded system snippets'
       catch e
-        log.error e
+        log.exception e
 
   @_loadUserSnippets = =>
     file    = require 'ko/file'
@@ -71,11 +76,9 @@
         log.debug 'Loaded user snippets'
       catch e
         unless notified
-          notify.send 'Xemmet: unable to load your snippets',
-            priority: 'error'
-            category: 'xemmet'
+          @_notify 'Xemmet: unable to load your snippets', 'error'
           notified = on
-          log.warn e
+          log.exception e
 
   @__debug__ = (permanent = no) =>
     @prefs.setBoolean 'xemmet_force_debug', permanent
@@ -217,15 +220,15 @@
       log.debug "@_isAbbr extract = #{extract}; success!"
       return success: on, data: extract, length: extract.length
     catch e
-      log.error "@_isAbbr invalid abbreviation = #{extract}"
-      log.exception e
+      log.debug "@_isAbbr invalid abbreviation = #{extract}"
+      log.debug e
       return success: no
 
   @_strip = (string) =>
     string.replace(/<(?:.|\n)*?>/gm, '')
   
   @_finalize = =>
-    log.info 'Current string is not a valid Emmet abbreviation, passing it to Komodo handlers'
+    log.debug 'Current string is not a valid Emmet abbreviation, passing it to Komodo handlers'
     true
   
   @_createSelection = (abbrLength, editor) =>
@@ -255,9 +258,7 @@
       snippet = @_createSnippet expand, no
       ko.abbrev.insertAbbrevSnippet snippet, require('ko/views').current().get()
     else
-      notify.send "Xemmet: abbreviation #{wrapWith} is invalid",
-        priority: 'error'
-        category: 'xemmet'
+      @_notify "Xemmet: abbreviation #{wrapWith} is invalid", 'error'
       return no
     on
     
@@ -266,18 +267,17 @@
     @_loadUserSnippets()
   
   @onKeyDownListener = (event) =>
+    key = event.keyCode
+    return on if key not in [9, 27] # only proceed if esc/tab was pressed
     editor = require 'ko/editor'
     views  = require 'ko/views'
     koDoc = views.current().get 'koDoc'
     lang = koDoc.subLanguage
     return on if lang is no
     lang = lang.toLowerCase().replace ' ', '_'
-    key = event.keyCode
     
     if key is 27 and inWrapMode # esc key
-      notify.send 'Xemmet: Wrap Selection has been canceled',
-        priority: 'info'
-        category: 'xemmet'
+      @_notify 'Xemmet: Wrap Selection has been canceled'
       inWrapMode = no
       selection = ''
       return on
@@ -293,9 +293,7 @@
       if event.ctrlKey and not inWrapMode
         log.debug 'Listener[global] ctrl+tab'
         if @prefs.getBoolean('xemmet_wrap_strict_mode', on) and @_getBaseLang(lang) isnt 'html'
-          notify.send 'Xemmet: Wrap Selection is in strict mode (HTML only)',
-            priority: 'info'
-            category: 'xemmet'
+          @_notify 'Xemmet: Wrap Selection is in strict mode (HTML only)'
           e.preventDefault()
           return on
 
@@ -313,9 +311,7 @@
 
         event.preventDefault()
         inWrapMode = on
-        notify.send "Xemmet: #{message} has been saved, write your abbreviation",
-          priority: 'info'
-          category: 'xemmet'
+        @_notify "Xemmet: #{message} has been saved, write your abbreviation"
         log.debug "Listener[selection-grab] selection = #{selection}"
         editor.replaceSelection ''
       else if inWrapMode
