@@ -7,8 +7,12 @@
   logLevel = require('ko/logging').LOG_INFO
   notify   = require 'notify/notify'
   {Cc, Ci} = require 'chrome'
+
+  migrations = require './migrations/index'
+
+  @logger = log
   
-  baseLangs =
+  @baseLangs =
     html: [
       'html', 'html5', 'rhtml'
       'erb', 'markdown', 'php'
@@ -87,13 +91,9 @@
   @load = =>
     return no unless @prefs.getBoolean 'xemmet_enabled', on
 
-    try
-      @prefs.getString 'xemmet_css_languages'
-      @prefs.getString 'xemmet_html_languages'
-    catch e
-      log.debug 'First run'
-      @prefs.setString 'xemmet_css_languages', baseLangs.css.join " "
-      @prefs.setString 'xemmet_html_languages', baseLangs.html.join " "
+    Promise.all(migrations.proceed @).then (result) =>
+      for migration in result
+        log.info "Migration #{migration.name} passed: #{JSON.stringify migration.result}"
 
     window.addEventListener 'keydown', @onKeyDownListener, on
     window.addEventListener 'editor_view_opened', @onViewOpened, on
