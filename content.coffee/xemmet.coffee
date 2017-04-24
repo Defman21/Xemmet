@@ -91,26 +91,29 @@
   @load = =>
     return no unless @prefs.getBoolean 'xemmet_enabled', on
 
-    Promise.all(migrations.proceed @).then (result) =>
+    Promise.all(migrations.proceed @).then((result) =>
+      if @prefs.getBoolean 'xemmet_force_debug', no
+        log.setLevel require('ko/logging').LOG_DEBUG
+      else
+        log.setLevel logLevel
+
       for migration in result
         log.info "Migration #{migration.name} passed: #{JSON.stringify migration.result}"
 
-    window.addEventListener 'keydown', @onKeyDownListener, on
-    window.addEventListener 'editor_view_opened', @onViewOpened, on
+      window.addEventListener 'keydown', @onKeyDownListener, on
+      window.addEventListener 'editor_view_opened', @onViewOpened, on
 
-    if @prefs.getBoolean 'xemmet_force_debug', no
-      log.setLevel require('ko/logging').LOG_DEBUG
-    else
-      log.setLevel logLevel
+      loaded = on unless loaded
 
-    loaded = on unless loaded
-
-    @_loadInjector()
-    require('notify/categories').register 'xemmet', label: 'Xemmet'
-    @_upgradeLanguages()
-    @_loadSystemSnippets snippets.snippets()
-    @_loadUserSnippets()
-    log.info 'Xemmet loaded'
+      @_loadInjector()
+      require('notify/categories').register 'xemmet', label: 'Xemmet'
+      @_upgradeLanguages()
+      @_loadSystemSnippets snippets.snippets()
+      @_loadUserSnippets()
+      log.info 'Xemmet loaded'
+    ).catch (error) =>
+      log.error 'Xemmet failed to load'
+      log.exception error
 
   @unload = =>
     window.removeEventListener 'keydown', @onKeyDownListener, on
