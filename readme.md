@@ -40,3 +40,9 @@ To leave this mode, press Esc.
 ## Custom snippets
 
 See [Emmet docs](http://docs.emmet.io/customization/snippets/).
+
+## Building
+
+1. Install coffeescript (`npm install -g coffeescript@next`)
+2. Run `./build.sh`
+3. Grab the latest build from the `builds` folder.
