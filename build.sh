@@ -1,5 +1,6 @@
 #!/usr/bin/env sh
 echo "Start building..."
+rm -rf content
 echo "Building coffee's"
 coffee -o content -c content.coffee
 echo "Copying the SDK's"
