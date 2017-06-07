@@ -1,4 +1,9 @@
 module.exports =
+  '0.10.0-beautify-result-pref': (resolve, context) =>
+    context.prefs.setBoolean 'xemmet_beautify_result', yes
+    resolve
+      name: '0.10.0-beautify-result-pref'
+      result: 'Changed xemmet_beautify_result to true'
   '0.8.3-force-debug': (resolve, context) =>
     context.prefs.setBoolean 'xemmet_force_debug', no
     resolve
