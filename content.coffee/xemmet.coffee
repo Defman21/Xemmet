@@ -82,7 +82,7 @@
       catch e
         unless notified
           @_notify 'Xemmet: unable to load your snippets', 'error'
-          notified = on
+          notified = yes
           log.exception e
 
   @__debug__ = (permanent = no) =>
@@ -90,7 +90,7 @@
     log.setLevel require('ko/logging').LOG_DEBUG
 
   @load = =>
-    return no unless @prefs.getBoolean 'xemmet_enabled', on
+    return no unless @prefs.getBoolean 'xemmet_enabled', yes
 
     Promise.all(migrations.proceed @).then((result) =>
       if @prefs.getBoolean 'xemmet_force_debug', no
@@ -101,10 +101,10 @@
       for migration in result
         log.info "Migration #{migration.name} passed: #{JSON.stringify migration.result}"
 
-      window.addEventListener 'keydown', @onKeyDownListener, on
-      window.addEventListener 'editor_view_opened', @onViewOpened, on
+      window.addEventListener 'keydown', @onKeyDownListener, yes
+      window.addEventListener 'editor_view_opened', @onViewOpened, yes
 
-      loaded = on unless loaded
+      loaded = yes unless loaded
 
       @_loadInjector()
       require('notify/categories').register 'xemmet', label: 'Xemmet'
@@ -117,8 +117,8 @@
       log.exception error
 
   @unload = =>
-    window.removeEventListener 'keydown', @onKeyDownListener, on
-    window.removeEventListener 'editor_view_opened', @onViewOpened, on
+    window.removeEventListener 'keydown', @onKeyDownListener, yes
+    window.removeEventListener 'editor_view_opened', @onViewOpened, yes
     loaded = no
     log.info 'Xemmet unloaded'
 
@@ -187,7 +187,7 @@
     lang
 
   @_isEnabledLang = (lang) =>
-    return on if lang in subLangs.html or lang in subLangs.css
+    return yes if lang in subLangs.html or lang in subLangs.css
     no
 
   @_beautify = (data) =>
@@ -200,12 +200,11 @@
       log.debug '@_beautify indent = tabs'
     beautify.html data, beautifyConfig
 
-  @_expand = (string, language, noBeautify = no) =>
+  @_expand = (string, language, beautify = yes) =>
     log.debug "@_expand args = #{JSON.stringify arguments}"
     try
       expand = emmet.expandAbbreviation string, language
-      log.debug "@_expand expand = #{expand}"
-      if noBeautify
+      unless beautify
         log.debug "@_expand return = #{expand}"
         return expand
       if @_getBaseLang(language) is 'html'
@@ -229,7 +228,7 @@
         log.debug '@_isAbbr abbreviation is invalid/empty'
         return success: no
       log.debug "@_isAbbr extract = #{extract}; success!"
-      return success: on, data: extract, length: extract.length
+      return success: yes, data: extract, length: extract.length
     catch e
       log.debug "@_isAbbr invalid abbreviation = #{extract}"
       log.debug e
@@ -259,11 +258,12 @@
     abbreviation = @_isAbbr wrapWith
     
     if abbreviation.success
-      expand = @_prepare @_expand(abbreviation.data, language, on), '[[replace]]'
+      expand = @_prepare @_expand(abbreviation.data, language, no), '[[replace]]'
       expand = expand.replace '[[replace]]', selection
       log.debug "@_wrapSelection to insert = #{expand}"
       try
-        expand = @_beautify expand
+        if @prefs.getBoolean 'xemmet_beautify_result', yes
+          expand = @_beautify expand
       catch e
         log.debug 'unable to beautify the result'
       snippet = @_createSnippet expand, no
@@ -271,7 +271,7 @@
     else
       @_notify "Xemmet: abbreviation #{wrapWith} is invalid", 'error'
       return no
-    on
+    yes
     
   @onViewOpened = =>
     @_upgradeLanguages()
@@ -279,49 +279,49 @@
   
   @onKeyDownListener = (event) =>
     key = event.keyCode
-    return on if key not in [9, 27] # only proceed if esc/tab was pressed
+    return yes if key not in [9, 27] # only proceed if esc/tab was pressed
     editor = require 'ko/editor'
     views  = require 'ko/views'
     koDoc = views.current().get 'koDoc'
     lang = koDoc.subLanguage
-    return on if lang is no
+    return yes unless lang
     lang = lang.toLowerCase().replace ' ', '_'
     
     if key is 27 and inWrapMode # esc key
       @_notify 'Xemmet: Wrap Selection has been canceled'
       inWrapMode = no
       selection = ''
-      return on
+      return yes
     
     if key is 9 # tab key
       if event.shiftKey or koDoc.getTabstopInsertionTable({}).length > 0
-        return on
+        return yes
     
-      if @prefs.getBoolean('xemmet_strict_mode', on) and not @_isEnabledLang lang
+      if @prefs.getBoolean('xemmet_strict_mode', yes) and not @_isEnabledLang lang
         log.debug "Prefs[global]: xemmet_strict_mode = true, Xemmet ignores #{lang}"
-        return on
+        return yes
 
       if event.ctrlKey and not inWrapMode
         log.debug 'Listener[global] ctrl+tab'
-        if @prefs.getBoolean('xemmet_wrap_strict_mode', on) and @_getBaseLang(lang) isnt 'html'
+        if @prefs.getBoolean('xemmet_wrap_strict_mode', yes) and @_getBaseLang(lang) isnt 'html'
           @_notify 'Xemmet: Wrap Selection is in strict mode (HTML only)'
           e.preventDefault()
-          return on
+          return yes
 
         selection = editor.getSelection()
         message = 'Selection'
 
-        if selection.length is 0 and @prefs.getBoolean('xemmet_enable_line_wrap_selection', on)
+        if selection.length is 0 and @prefs.getBoolean 'xemmet_enable_line_wrap_selection', yes
           selection = editor.getLine()
           message = 'Current line'
           editor.goLineEnd()
           @_createSelection selection.length, editor
         else if selection.length is 0
           log.debug 'Prefs[selection-grab]: xemmet_enable_line_wrap_selection = false, selection = null; return'
-          return on
+          return yes
 
         event.preventDefault()
-        inWrapMode = on
+        inWrapMode = yes
         @_notify "Xemmet: #{message} has been saved, write your abbreviation"
         log.debug "Listener[selection-grab] selection = #{selection}"
         editor.replaceSelection ''
@@ -333,23 +333,23 @@
         line = editor.getLine().substring 0, editor.getCursorPosition().ch
         log.debug "Listener[tab] string before caret '#{line}'"
 
-        toEpxand = @_strip line
+        toExpand = @_strip line
         if typeof ignoreExpand[lang] isnt 'undefined'
           for regex in ignoreExpand[lang]
-            @_finalize() if regex.test toEpxand
+            @_finalize() if regex.test toExpand
 
         isSelection = no
 
-        log.debug "Listener[tab-expand] possible abbreviation before caret '#{toEpxand}'"
+        log.debug "Listener[tab-expand] possible abbreviation before caret '#{toExpand}'"
 
-        abbreviation = @_isAbbr toEpxand, lang
+        abbreviation = @_isAbbr toExpand, lang
 
         if abbreviation.success
           log.debug 'Listener[tab-expand; success] inserting abbreviation'
           editor.scimoz().beginUndoAction()
           event.preventDefault()
           toInsert = abbreviation.data
-          expand = @_prepare @_expand toInsert, lang
+          expand = @_prepare @_expand toInsert, lang, @prefs.getBoolean('xemmet_beautify_result', yes)
           len = abbreviation.length
 
           log.debug "Listener[tab-expand; success] to insert: #{expand} (from abbr #{toInsert}); len = #{len}"
