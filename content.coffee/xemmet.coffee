@@ -11,6 +11,7 @@
   migrations = require './migrations/index'
 
   @logger = log
+  koSnippet = no
   
   @baseLangs =
     html: [
@@ -129,16 +130,23 @@
     return no unless loaded
     @unload()
 
-  @_createSnippet = (text, noIndent) =>
-    type: 'snippet'
-    name: 'xemmet-temp-snippet'
-    parent:
-      name: 'xemmet-parent'
-    set_selection: no
-    indent_relative: not noIndent
-    value: text
-    hasAttribute: (name) => name in @
-    getStringAttribute: (name) => '' + @[name]
+  @_createSnippet = (text, noIndent = no) =>
+    # the whole function is ko.projects.addSnippetFromText except for:
+    # * no % escaping
+    # * no .addItem call
+    unless koSnippet
+      log.debug 'koSnippet has been defined'
+      koSnippet = ko.toolbox2.createPartFromType 'snippet'
+      koSnippet.type = 'snippet'
+      koSnippet.setStringAttribute 'name', 'xemmet-temp-snippet'
+      koSnippet.setStringAttribute 'set_selection', 'false'
+      koSnippet.setStringAttribute 'auto_abbreviation', 'false'
+    koSnippet.setStringAttribute 'indent_relative', '' + (not noIndent)
+    ANCHOR_MARKER = '!@#_anchor'
+    CURRENTPOS_MARKER = '!@#_currentPos'
+    text = "#{ANCHOR_MARKER}#{text}#{CURRENTPOS_MARKER}"
+    koSnippet.value = text
+    koSnippet
 
   @_replace = (text, rules) =>
     for rule in rules
