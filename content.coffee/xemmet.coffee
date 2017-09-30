@@ -7,6 +7,7 @@
   logLevel = require('ko/logging').LOG_INFO
   notify   = require 'notify/notify'
   {Cc, Ci} = require 'chrome'
+  ko       = require('ko/windows').getMain().ko
 
   migrations = require './migrations/index'
 
@@ -46,7 +47,7 @@
   @_loadInjector = =>
     prefs.injectPref
       basename: 'pref-editsmart'
-      siblingSelector: '#highlightvariable_groupbox'
+      siblingSelector: '#folding_groupbox'
       caption: 'Xemmet'
     log.debug 'Injected preferences'
 
@@ -56,8 +57,8 @@
       category: 'xemmet'
 
   @_upgradeLanguages = =>
-    customCssLangs  = @prefs.getString('xemmet_css_languages', '').split  " "
-    customHtmlLangs = @prefs.getString('xemmet_html_languages', '').split " "
+    customCssLangs  = @prefs.getString('xemmet.languages.css', '').split  " "
+    customHtmlLangs = @prefs.getString('xemmet.languages.html', '').split " "
 
     subLangs.css = customCssLangs
     subLangs.html = customHtmlLangs
@@ -86,14 +87,14 @@
           log.exception e
 
   @__debug__ = (permanent = no) =>
-    @prefs.setBoolean 'xemmet_force_debug', permanent
+    @prefs.setBoolean 'xemmet.debug', permanent
     log.setLevel require('ko/logging').LOG_DEBUG
 
   @load = =>
-    return no unless @prefs.getBoolean 'xemmet_enabled', yes
+    return no unless @prefs.getBoolean 'xemmet.enabled', yes
 
     Promise.all(migrations.proceed @).then((result) =>
-      if @prefs.getBoolean 'xemmet_force_debug', no
+      if @prefs.getBoolean 'xemmet.debug', no
         log.setLevel require('ko/logging').LOG_DEBUG
       else
         log.setLevel logLevel
@@ -262,7 +263,7 @@
       expand = expand.replace '[[replace]]', selection
       log.debug "@_wrapSelection to insert = #{expand}"
       try
-        if @prefs.getBoolean 'xemmet_beautify_result', yes
+        if @prefs.getBoolean 'xemmet.beautify', yes
           expand = @_beautify expand
       catch e
         log.debug 'unable to beautify the result'
@@ -297,13 +298,13 @@
       if event.shiftKey or koDoc.getTabstopInsertionTable({}).length > 0
         return yes
     
-      if @prefs.getBoolean('xemmet_strict_mode', yes) and not @_isEnabledLang lang
-        log.debug "Prefs[global]: xemmet_strict_mode = true, Xemmet ignores #{lang}"
+      if @prefs.getBoolean('xemmet.strict', yes) and not @_isEnabledLang lang
+        log.debug "Prefs[global]: xemmet.strict = true, Xemmet ignores #{lang}"
         return yes
 
       if event.ctrlKey and not inWrapMode
         log.debug 'Listener[global] ctrl+tab'
-        if @prefs.getBoolean('xemmet_wrap_strict_mode', yes) and @_getBaseLang(lang) isnt 'html'
+        if @prefs.getBoolean('xemmet.strict.wrap', yes) and @_getBaseLang(lang) isnt 'html'
           @_notify 'Xemmet: Wrap Selection is in strict mode (HTML only)'
           e.preventDefault()
           return yes
@@ -311,13 +312,13 @@
         selection = editor.getSelection()
         message = 'Selection'
 
-        if selection.length is 0 and @prefs.getBoolean 'xemmet_enable_line_wrap_selection', yes
+        if selection.length is 0 and @prefs.getBoolean 'xemmet.wrap_lines', yes
           selection = editor.getLine()
           message = 'Current line'
           editor.goLineEnd()
           @_createSelection selection.length, editor
         else if selection.length is 0
-          log.debug 'Prefs[selection-grab]: xemmet_enable_line_wrap_selection = false, selection = null; return'
+          log.debug 'Prefs[selection-grab]: xemmet.wrap_lines = false, selection = null; return'
           return yes
 
         event.preventDefault()
@@ -349,7 +350,7 @@
           editor.scimoz().beginUndoAction()
           event.preventDefault()
           toInsert = abbreviation.data
-          expand = @_prepare @_expand toInsert, lang, @prefs.getBoolean('xemmet_beautify_result', yes)
+          expand = @_prepare @_expand toInsert, lang, @prefs.getBoolean('xemmet.beautify', yes)
           len = abbreviation.length
 
           log.debug "Listener[tab-expand; success] to insert: #{expand} (from abbr #{toInsert}); len = #{len}"

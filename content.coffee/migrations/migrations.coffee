@@ -1,27 +1,15 @@
 module.exports =
-  '0.10.0-beautify-result-pref': (resolve, context) =>
-    context.prefs.setBoolean 'xemmet_beautify_result', yes
+  '0.12.0-prefs-update': (resolve, context) =>
+    prefs = context.prefs
+    prefs.setBoolean 'xemmet.enabled', yes
+    prefs.setBoolean 'xemmet.strict', yes
+    prefs.setBoolean 'xemmet.strict.wrap', yes
+    prefs.setBoolean 'xemmet.wrap_lines', yes
+    prefs.setBoolean 'xemmet.beautify', yes
+    prefs.setBoolean 'xemmet.debug', no
+    
+    prefs.setString 'xemmet.languages.css', context.baseLangs.css.join " "
+    prefs.setString 'xemmet.languages.html', context.baseLangs.html.join " "
     resolve
-      name: '0.10.0-beautify-result-pref'
-      result: 'Changed xemmet_beautify_result to true'
-  '0.8.3-force-debug': (resolve, context) =>
-    context.prefs.setBoolean 'xemmet_force_debug', no
-    resolve
-      name: '0.8.3-force-debug'
-      result: 'Changed xemmet_force_debug to false'
-  '0.8.3-setup-languages': (resolve, context) =>
-    try
-      context.prefs.getString 'xemmet_css_languages'
-      context.prefs.getString 'xemmet_html_languages'
-      resolve
-        name: '0.8.3-setup-languages'
-        result: 'Nothing has changed: languages were already initialized'
-    catch e
-      context.logger.debug 'First run'
-      context.prefs.setString 'xemmet_css_languages', context.baseLangs.css.join " "
-      context.prefs.setString 'xemmet_html_languages', context.baseLangs.html.join " "
-      resolve
-        name: '0.8.3-setup-languages'
-        result: 'Default languages were set using passed context @baseLangs'
-
-
+      name: '0.12.0-prefs-update'
+      result: 'Prefs were reset to default'

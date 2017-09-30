@@ -55,11 +55,11 @@
         strictMode = require('ko/ui/checkbox').create 'Xemmet only works for HTML and CSS based languages'
 
         prefs = [
-          ['xemmet_enabled', yes]
-          ['xemmet_wrap_strict_mode', yes]
-          ['xemmet_enable_line_wrap_selection', yes]
-          ['xemmet_beautify_result', yes]
-          ['xemmet_strict_mode', yes]
+          ['xemmet.enabled', yes]
+          ['xemmet.strict.wrap', yes]
+          ['xemmet.wrap_lines', yes]
+          ['xemmet.beautify', yes]
+          ['xemmet.strict', yes]
         ]
 
         target = $ '#xemmet_main_vbox', frameWindow.document
@@ -69,7 +69,6 @@
           pref.$element.attr 'id', prefs[index][0]
           pref.$element.attr 'pref', yes
           pref.$element.attr 'preftype', 'boolean'
-          pref.$element.attr 'checked', xemmet.prefs.getBoolean prefs[index][0], prefs[index][1]
           target.append pref.$element
 
         textboxes = $.create('hbox', {id: 'xemmet_textbox_hbox', flex: 1},
@@ -79,7 +78,7 @@
             multiline: yes
             rows: 3
             pref: yes
-            prefstring: 'xemmet_html_languages'
+            prefstring: 'xemmet.languages.html'
             prefattribute: 'value'
             placeholder: 'Additional HTML Language Names that Xemmet should run on'
           })('textbox', {
@@ -88,7 +87,7 @@
             multiline: yes
             rows: 3
             pref: yes
-            prefstring: 'xemmet_css_languages'
+            prefstring: 'xemmet.languages.css'
             prefattribute: 'value'
             placeholder: 'Additional CSS Language Names that Xemmet should run on'
           })
