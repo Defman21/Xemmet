@@ -154,18 +154,16 @@
       text = text.replace rule.regex, rule.replace
     text
 
-  @_prepare = (snippet, replaceWith = null) =>
+  @_prepare = (snippet, rules = []) =>
     log.debug "@_prepare: args = #{JSON.stringify arguments}"
-
-    rules = [
+    defaultRules = [
       {
         regex: /\|/gmi
-        replace: replaceWith or '[[%tabstop:]]'
+        replace: '[[%tabstop:]]'
       }
       {
         regex: /(\$.*?\{[\t\s\n.]*?(\d+|\w+)(?:\:(.+?))?[\t\s\n.]*?\})/gmi
         replace: (_, g1, g2, g3) =>
-          return replaceWith if replaceWith
           if isNaN g2
             g3 = g2
             g2 = ""
@@ -174,9 +172,13 @@
       }
       {
         regex: /\{\s*\}/gmi,
-        replace: replaceWith or '{[[%tabstop:]]}'
+        replace: '{[[%tabstop:]]}'
       }
     ]
+    
+    rules = rules.concat defaultRules
+    
+    log.debug rules
 
     prepared = @_replace snippet, rules
     log.debug "@_prepare return = #{prepared}"
@@ -259,8 +261,12 @@
     abbreviation = @_isAbbr wrapWith
     
     if abbreviation.success
-      expand = @_prepare @_expand(abbreviation.data, language, no), '[[replace]]'
-      expand = expand.replace '[[replace]]', selection
+      if abbreviation.data.indexOf('{@}') is -1
+        abbreviation.data += '{@}'
+      expand = @_prepare @_expand(abbreviation.data, language, no), [{
+        regex: /\$\{\d+}@/gmi,
+        replace: selection
+      }]
       log.debug "@_wrapSelection to insert = #{expand}"
       try
         if @prefs.getBoolean 'xemmet.beautify', yes
